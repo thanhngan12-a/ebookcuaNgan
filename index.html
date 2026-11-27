@@ -87,6 +87,18 @@
     body.zen-mode #btnExitZen {
       display: inline-flex;
     }
+    /* Reader Highlight Colors & Note Indicator */
+    .hl-yellow { background-color: rgba(250, 204, 21, 0.28); border-bottom: 2px solid rgba(245, 158, 11, 0.7); }
+    .hl-green  { background-color: rgba(52, 211, 153, 0.24); border-bottom: 2px solid rgba(16, 185, 129, 0.7); }
+    .hl-pink   { background-color: rgba(244, 114, 182, 0.24); border-bottom: 2px solid rgba(236, 72, 153, 0.7); }
+    .hl-blue   { background-color: rgba(56, 189, 248, 0.24); border-bottom: 2px solid rgba(14, 165, 233, 0.7); }
+    .sentence-span.has-note::after {
+      content: ' 📝';
+      font-size: 0.78em;
+      opacity: 0.85;
+    }
+    .font-serif-reader { font-family: 'Lora', Georgia, serif; }
+    .font-sans-reader  { font-family: 'Inter', system-ui, sans-serif; }
     body {
       background-color: var(--bg-app);
       color: var(--text-primary);
@@ -219,8 +231,12 @@
         <i data-lucide="file-plus" class="w-4 h-4 text-amber-500"></i>
         <span class="hidden md:inline">Thêm sách</span>
       </button>
+      <button id="dailyGoalPill" type="button" class="hidden md:inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-500 border border-amber-500/30 text-[11px] font-semibold hover:bg-amber-500/25 transition" title="Mục tiêu đọc mỗi ngày & Chuỗi ngày liên tiếp">
+        <span id="dailyGoalPillText">🔥 0n • 0/15p</span>
+      </button>
       <button id="btnFontDown" type="button" class="hidden sm:inline-flex px-2 py-1.5 rounded-lg text-xs font-semibold elevated border hover:border-amber-500/50 transition" title="Giảm cỡ chữ">A-</button>
       <button id="btnFontUp" type="button" class="hidden sm:inline-flex px-2 py-1.5 rounded-lg text-xs font-semibold elevated border hover:border-amber-500/50 transition" title="Tăng cỡ chữ">A+</button>
+      <button id="btnTypography" type="button" class="px-2 py-1.5 rounded-lg text-xs font-semibold elevated border hover:border-amber-500/50 transition text-amber-500" title="Tùy chỉnh đọc: Màu Sepia/AMOLED, Giãn dòng, Kiểu chữ">Aa</button>
       <button id="btnBookSearch" type="button" class="p-2 rounded-lg elevated border hover:border-amber-500/50 transition" title="Tìm kiếm từ khóa trong toàn sách (Phím /)" aria-label="Tìm kiếm trong sách">
         <i data-lucide="search" class="w-4 h-4 text-amber-500"></i>
       </button>
@@ -232,6 +248,97 @@
       </button>
     </div>
   </header>
+
+  <!-- Typography & Reading Comfort Modal (Sepia / AMOLED / Line-Height / Font) -->
+  <div id="typographyModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-5">
+    <div class="surface border rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+      <div class="p-3.5 sm:p-4 border-b flex items-center justify-between" style="border-color: var(--border-subtle)">
+        <h3 class="text-sm font-semibold flex items-center gap-2">
+          <i data-lucide="sliders-horizontal" class="w-4 h-4 text-amber-500"></i>
+          Tùy chỉnh hiển thị trang đọc
+        </h3>
+        <button id="btnCloseTypography" type="button" class="p-1.5 rounded-lg elevated hover:opacity-80 transition" aria-label="Đóng">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <div class="p-4 space-y-4 text-xs">
+        <div>
+          <div class="font-semibold mb-2" style="color: var(--text-secondary)">Màu nền đọc</div>
+          <div class="grid grid-cols-4 gap-2" id="typoThemeGroup">
+            <button type="button" data-typo-theme="dark" class="typo-theme-btn py-2 px-1 rounded-xl border font-semibold bg-[#0b1120] text-slate-100">Tối</button>
+            <button type="button" data-typo-theme="amoled" class="typo-theme-btn py-2 px-1 rounded-xl border font-semibold bg-black text-slate-200">AMOLED</button>
+            <button type="button" data-typo-theme="sepia" class="typo-theme-btn py-2 px-1 rounded-xl border font-semibold bg-[#f4ecd8] text-[#3b2f1e]">Sepia</button>
+            <button type="button" data-typo-theme="light" class="typo-theme-btn py-2 px-1 rounded-xl border font-semibold bg-white text-slate-800">Sáng</button>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="font-semibold" style="color: var(--text-secondary)">Giãn dòng (Line-height)</span>
+            <span id="typoLineHeightLabel" class="font-bold text-amber-500">1.85</span>
+          </div>
+          <div class="grid grid-cols-4 gap-2" id="typoLhGroup">
+            <button type="button" data-typo-lh="1.5" class="typo-lh-btn py-1.5 rounded-lg elevated border font-semibold">1.5 (Gọn)</button>
+            <button type="button" data-typo-lh="1.85" class="typo-lh-btn py-1.5 rounded-lg elevated border font-semibold">1.85 (Chuẩn)</button>
+            <button type="button" data-typo-lh="2.15" class="typo-lh-btn py-1.5 rounded-lg elevated border font-semibold">2.15 (Thoáng)</button>
+            <button type="button" data-typo-lh="2.45" class="typo-lh-btn py-1.5 rounded-lg elevated border font-semibold">2.45 (Rộng)</button>
+          </div>
+        </div>
+        <div>
+          <div class="font-semibold mb-1.5" style="color: var(--text-secondary)">Kiểu chữ</div>
+          <div class="grid grid-cols-2 gap-2" id="typoFontGroup">
+            <button type="button" data-typo-font="serif" class="typo-font-btn py-2 rounded-xl elevated border font-semibold font-serif-reader">Lora (Có chân)</button>
+            <button type="button" data-typo-font="sans" class="typo-font-btn py-2 rounded-xl elevated border font-semibold font-sans-reader">Inter (Không chân)</button>
+          </div>
+        </div>
+        <div class="pt-1 border-t flex items-center justify-between" style="border-color: var(--border-subtle)">
+          <span class="font-semibold" style="color: var(--text-secondary)">Cỡ chữ hiện tại</span>
+          <div class="flex items-center gap-2">
+            <button type="button" id="typoFontDown" class="px-3 py-1.5 rounded-lg elevated border font-bold">A-</button>
+            <span id="typoFontSizeLabel" class="font-bold tabular-nums w-10 text-center">18px</span>
+            <button type="button" id="typoFontUp" class="px-3 py-1.5 rounded-lg elevated border font-bold">A+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Highlight & Personal Note Modal -->
+  <div id="highlightModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-5">
+    <div class="surface border rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+      <div class="p-3.5 sm:p-4 border-b flex items-center justify-between" style="border-color: var(--border-subtle)">
+        <h3 class="text-sm font-semibold flex items-center gap-2">
+          <i data-lucide="highlighter" class="w-4 h-4 text-amber-500"></i>
+          Highlight &amp; Ghi chú câu hay
+        </h3>
+        <button id="btnCloseHighlight" type="button" class="p-1.5 rounded-lg elevated hover:opacity-80 transition" aria-label="Đóng">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <div class="p-4 space-y-3.5 text-xs">
+        <div id="hlPreviewQuote" class="p-3 rounded-xl elevated border italic leading-relaxed max-h-28 overflow-y-auto custom-scroll"></div>
+        <div>
+          <div class="font-semibold mb-1.5" style="color: var(--text-secondary)">Chọn màu tô sáng</div>
+          <div class="grid grid-cols-4 gap-2" id="hlColorPicker">
+            <button type="button" data-hl-color="yellow" class="hl-color-btn py-2 rounded-lg border font-semibold hl-yellow">Vàng</button>
+            <button type="button" data-hl-color="green" class="hl-color-btn py-2 rounded-lg border font-semibold hl-green">Xanh lá</button>
+            <button type="button" data-hl-color="pink" class="hl-color-btn py-2 rounded-lg border font-semibold hl-pink">Hồng</button>
+            <button type="button" data-hl-color="blue" class="hl-color-btn py-2 rounded-lg border font-semibold hl-blue">Xanh dương</button>
+          </div>
+        </div>
+        <div>
+          <label for="hlNoteInput" class="block font-semibold mb-1.5" style="color: var(--text-secondary)">Ghi chú / cảm nghĩ của bạn (tùy chọn)</label>
+          <textarea id="hlNoteInput" rows="3" placeholder="Viết vài dòng ghi chú về câu này..." class="w-full p-2.5 rounded-xl elevated border focus:outline-none focus:border-amber-500 text-xs"></textarea>
+        </div>
+        <div class="flex items-center justify-between gap-2 pt-1">
+          <button id="btnDeleteHighlight" type="button" class="hidden px-3 py-2 rounded-xl border border-rose-500/40 text-rose-400 font-semibold hover:bg-rose-500/10 transition">Xóa Highlight</button>
+          <div class="flex items-center gap-2 ml-auto">
+            <button id="btnCancelHighlight" type="button" class="px-3 py-2 rounded-xl elevated border font-medium">Hủy</button>
+            <button id="btnSaveHighlight" type="button" class="px-4 py-2 rounded-xl bg-amber-500 text-slate-950 font-bold hover:bg-amber-400 transition">Lưu lại</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Full-Book Search Modal -->
   <div id="bookSearchModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-5">
@@ -296,6 +403,34 @@
 
       <!-- Tab 2: Reading Progress, History Log, Sync & Bookmarks -->
       <div id="sidebarTabProgress" class="flex-1 hidden flex-col min-h-0 overflow-y-auto custom-scroll p-3 space-y-4">
+        <!-- Daily Reading Goal & Streak Card -->
+        <div id="dailyGoalCard" class="p-3.5 rounded-xl elevated border space-y-2.5">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-semibold flex items-center gap-1.5">
+              <span>🔥</span>
+              <span>Mục tiêu đọc hôm nay</span>
+            </span>
+            <span id="dailyStreakBadge" class="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-500 text-[10px] font-bold">0 ngày liên tiếp</span>
+          </div>
+          <div class="flex items-baseline justify-between text-[11px]">
+            <span id="dailyGoalProgressText" class="font-bold text-emerald-400">0 / 15 phút</span>
+            <span id="dailyGoalStatusText" style="color: var(--text-secondary)">Cố lên nào!</span>
+          </div>
+          <div class="w-full h-2 rounded-full bg-slate-700/40 overflow-hidden">
+            <div id="dailyGoalBar" class="h-full bg-emerald-500 rounded-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+          <div class="flex items-center justify-between gap-1 pt-0.5">
+            <span class="text-[10px]" style="color: var(--text-secondary)">Mục tiêu/ngày:</span>
+            <div class="flex items-center gap-1" id="dailyGoalOptions">
+              <button type="button" data-goal-min="10" class="goal-min-btn px-1.5 py-0.5 rounded surface border text-[10px] font-semibold">10p</button>
+              <button type="button" data-goal-min="15" class="goal-min-btn px-1.5 py-0.5 rounded surface border text-[10px] font-semibold">15p</button>
+              <button type="button" data-goal-min="30" class="goal-min-btn px-1.5 py-0.5 rounded surface border text-[10px] font-semibold">30p</button>
+              <button type="button" data-goal-min="45" class="goal-min-btn px-1.5 py-0.5 rounded surface border text-[10px] font-semibold">45p</button>
+              <button type="button" data-goal-min="60" class="goal-min-btn px-1.5 py-0.5 rounded surface border text-[10px] font-semibold">60p</button>
+            </div>
+          </div>
+        </div>
+
         <div class="p-3.5 rounded-xl elevated border space-y-2.5">
           <div class="flex items-center justify-between">
             <span class="text-xs font-semibold flex items-center gap-1.5">
@@ -340,6 +475,17 @@
         </div>
 
         <!-- Reading History Log -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-semibold flex items-center gap-1.5">
+              <i data-lucide="highlighter" class="w-3.5 h-3.5 text-amber-500"></i>
+              Highlight &amp; Ghi chú (<span id="highlightCountText">0</span>)
+            </h4>
+            <button id="btnAddHighlightSidebar" type="button" class="text-[10px] text-amber-500 font-semibold hover:underline">+ Highlight câu hiện tại</button>
+          </div>
+          <div id="highlightList" class="space-y-1.5"></div>
+        </div>
+
         <div class="space-y-2">
           <div class="flex items-center justify-between">
             <h4 class="text-xs font-semibold flex items-center gap-1.5">
@@ -502,6 +648,10 @@
 
         <!-- Right: Bookmark, Speed (1.4x), Sleep Timer, Soulful Blended BGM, AutoScroll -->
         <div class="flex items-center gap-1.5 relative">
+          <button id="btnQuickHighlight" type="button" class="p-1.5 rounded-lg elevated border hover:border-amber-500/50 transition" title="Highlight &amp; Ghi chú câu đang đọc (Phím H hoặc nhấp đúp câu)">
+            <i data-lucide="highlighter" class="w-4 h-4 text-amber-500"></i>
+          </button>
+
           <button id="btnQuickBookmark" type="button" class="p-1.5 rounded-lg elevated border hover:border-amber-500/50 transition" title="Lưu dấu trang tại trang hiện tại">
             <i data-lucide="bookmark-plus" class="w-4 h-4 text-amber-500"></i>
           </button>
@@ -840,11 +990,14 @@
       autoScroll: true,
       autoDuck: true,
       fontSize: 18,
+      lineHeight: 1.85,
+      fontFamily: 'serif',
       theme: 'dark',
       booksStore: {},
       completedChapters: {},
       chapterProgressMap: {},
       bookmarks: [],
+      highlights: [],
       readingHistory: [], // { id, bookId, bookTitle, chapterId, chapterTitle, page, sentenceIdx, timeStr }
       lastSavedAt: '',
       timerMode: 'off',
@@ -1059,6 +1212,7 @@
         completedChapters: state.completedChapters,
         chapterProgressMap: state.chapterProgressMap,
         bookmarks: state.bookmarks,
+        highlights: state.highlights,
         lastSavedAt: state.lastSavedAt
       };
       updateProgressStatsUI();
@@ -1078,6 +1232,8 @@
           ambientMode: state.ambientMode,
           ambientVol: state.ambientVol,
           fontSize: state.fontSize,
+          lineHeight: state.lineHeight,
+          fontFamily: state.fontFamily,
           theme: state.theme,
           booksStore: state.booksStore,
           readingHistory: state.readingHistory
@@ -1125,7 +1281,9 @@
         if (d.ambientMode) state.ambientMode = d.ambientMode;
         if (typeof d.ambientVol === 'number') state.ambientVol = d.ambientVol;
         if (typeof d.fontSize === 'number') state.fontSize = d.fontSize;
-        if (d.theme === 'light' || d.theme === 'dark') state.theme = d.theme;
+        if (typeof d.lineHeight === 'number') state.lineHeight = d.lineHeight;
+        if (d.fontFamily === 'serif' || d.fontFamily === 'sans') state.fontFamily = d.fontFamily;
+        if (['light', 'dark', 'sepia', 'amoled'].includes(d.theme)) state.theme = d.theme;
         if (d.booksStore && typeof d.booksStore === 'object') state.booksStore = d.booksStore;
         if (Array.isArray(d.readingHistory)) state.readingHistory = d.readingHistory;
         if (d.activeBookId) {
@@ -1155,6 +1313,7 @@
         state.completedChapters = saved.completedChapters || {};
         state.chapterProgressMap = saved.chapterProgressMap || {};
         state.bookmarks = Array.isArray(saved.bookmarks) ? saved.bookmarks : [];
+        state.highlights = Array.isArray(saved.highlights) ? saved.highlights : [];
         state.lastSavedAt = saved.lastSavedAt || '';
       } else {
         state.chapterId = 0;
@@ -1162,6 +1321,7 @@
         state.completedChapters = {};
         state.chapterProgressMap = {};
         state.bookmarks = [];
+        state.highlights = [];
         state.lastSavedAt = '';
       }
 
@@ -1171,6 +1331,7 @@
       renderChapterList(el.chapterSearch.value);
       renderChapterContent();
       renderBookmarks();
+      renderHighlights();
       renderHistoryList();
       if (resetScroll) saveState();
     }
@@ -1435,6 +1596,241 @@
 
     function applyFontSize() {
       el.readerArticle.style.fontSize = state.fontSize + 'px';
+      el.readerArticle.style.lineHeight = String(state.lineHeight || 1.85);
+      el.readerArticle.classList.toggle('font-serif-reader', state.fontFamily !== 'sans');
+      el.readerArticle.classList.toggle('font-sans-reader', state.fontFamily === 'sans');
+      el.readerArticle.querySelectorAll('p').forEach(p => { p.style.lineHeight = String(state.lineHeight || 1.85); });
+      const fsLbl = document.getElementById('typoFontSizeLabel');
+      const lhLbl = document.getElementById('typoLineHeightLabel');
+      if (fsLbl) fsLbl.textContent = state.fontSize + 'px';
+      if (lhLbl) lhLbl.textContent = String(state.lineHeight || 1.85);
+      document.querySelectorAll('.typo-theme-btn').forEach(b => {
+        const active = b.dataset.typoTheme === state.theme;
+        b.classList.toggle('ring-2', active);
+        b.classList.toggle('ring-amber-500', active);
+      });
+      document.querySelectorAll('.typo-lh-btn').forEach(b => {
+        const active = Math.abs(parseFloat(b.dataset.typoLh) - (state.lineHeight || 1.85)) < 0.05;
+        b.classList.toggle('border-amber-500', active);
+        b.classList.toggle('text-amber-500', active);
+      });
+      document.querySelectorAll('.typo-font-btn').forEach(b => {
+        const active = b.dataset.typoFont === (state.fontFamily || 'serif');
+        b.classList.toggle('border-amber-500', active);
+        b.classList.toggle('text-amber-500', active);
+      });
+    }
+
+    // --- Highlights & Personal Notes ---
+    function getHighlightFor(chapterId, sentenceIdx) {
+      return (state.highlights || []).find(h => h.chapterId === chapterId && h.sentenceIdx === sentenceIdx);
+    }
+
+    function applyHighlightsToArticle() {
+      if (!el.readerArticle) return;
+      el.readerArticle.querySelectorAll('.sentence-span').forEach(span => {
+        const idx = parseInt(span.dataset.idx, 10);
+        span.classList.remove('hl-yellow', 'hl-green', 'hl-pink', 'hl-blue', 'has-note');
+        span.removeAttribute('title');
+        const hl = getHighlightFor(state.chapterId, idx);
+        if (hl) {
+          span.classList.add('hl-' + (hl.color || 'yellow'));
+          if (hl.note && hl.note.trim()) {
+            span.classList.add('has-note');
+            span.title = 'Ghi chú: ' + hl.note.trim();
+          } else {
+            span.title = 'Nhấp đúp để sửa Highlight / Ghi chú';
+          }
+        }
+      });
+    }
+
+    function renderHighlights() {
+      const listEl = document.getElementById('highlightList');
+      const countEl = document.getElementById('highlightCountText');
+      const items = state.highlights || [];
+      if (countEl) countEl.textContent = String(items.length);
+      if (!listEl) return;
+      listEl.innerHTML = '';
+      if (items.length === 0) {
+        listEl.innerHTML = `<div class="p-2.5 rounded-xl elevated text-[11px] text-center" style="color: var(--text-secondary)">Chưa có highlight nào. Bấm nút bút dạ quang (phím H) hoặc nhấp đúp vào câu hay để tô sáng &amp; ghi chú!</div>`;
+        return;
+      }
+      const dotColors = { yellow: 'bg-amber-400', green: 'bg-emerald-400', pink: 'bg-pink-400', blue: 'bg-sky-400' };
+      items.forEach(hl => {
+        const card = document.createElement('div');
+        card.className = 'p-2.5 rounded-xl elevated border hover:border-amber-500/40 transition space-y-1.5';
+        card.innerHTML = `
+          <div class="flex items-center justify-between gap-2 text-[11px]">
+            <span class="font-semibold truncate flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full shrink-0 ${dotColors[hl.color] || dotColors.yellow}"></span>
+              <span class="truncate text-amber-500">${escapeHtml(hl.chapterTitle)}</span>
+            </span>
+            <span class="shrink-0 px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 text-[10px]">Tr. ${hl.page || 1}</span>
+          </div>
+          <p class="text-[11px] italic line-clamp-2 opacity-90">"${escapeHtml(hl.snippet)}"</p>
+          ${hl.note ? `<p class="text-[11px] px-2 py-1 rounded-lg surface border">📝 ${escapeHtml(hl.note)}</p>` : ''}
+          <div class="flex items-center justify-between text-[10px]" style="color: var(--text-secondary)">
+            <span>${escapeHtml(hl.createdAt || '')}</span>
+            <div class="flex items-center gap-2">
+              <button type="button" class="hl-jump text-amber-500 font-semibold hover:underline">Tới câu</button>
+              <button type="button" class="hl-edit text-sky-400 hover:underline">Sửa</button>
+              <button type="button" class="hl-del text-rose-400 hover:underline">Xóa</button>
+            </div>
+          </div>
+        `;
+        card.querySelector('.hl-jump').addEventListener('click', () => {
+          selectChapter(hl.chapterId, hl.sentenceIdx, false, false);
+          closeSidebarMobile();
+        });
+        card.querySelector('.hl-edit').addEventListener('click', () => {
+          selectChapter(hl.chapterId, hl.sentenceIdx, false, false);
+          openHighlightModal(hl.chapterId, hl.sentenceIdx);
+        });
+        card.querySelector('.hl-del').addEventListener('click', () => {
+          state.highlights = (state.highlights || []).filter(x => x.id !== hl.id);
+          saveState();
+          renderHighlights();
+          applyHighlightsToArticle();
+          showToast('Đã xóa highlight');
+        });
+        listEl.appendChild(card);
+      });
+    }
+
+    let hlEditCtx = { chapterId: 0, sentenceIdx: 0, color: 'yellow' };
+    function openHighlightModal(chId = state.chapterId, sIdx = state.sentenceIdx) {
+      const modal = document.getElementById('highlightModal');
+      const quoteEl = document.getElementById('hlPreviewQuote');
+      const noteInput = document.getElementById('hlNoteInput');
+      const delBtn = document.getElementById('btnDeleteHighlight');
+      if (!modal) return;
+
+      const s = (chId === state.chapterId ? state.sentences[sIdx] : null);
+      const existing = getHighlightFor(chId, sIdx);
+      const quoteText = s ? s.text : (existing ? existing.snippet : '');
+      if (!quoteText) { showToast('Không tìm thấy câu để highlight.'); return; }
+
+      hlEditCtx = { chapterId: chId, sentenceIdx: sIdx, color: existing ? existing.color : 'yellow' };
+      if (quoteEl) quoteEl.textContent = `"${quoteText}"`;
+      if (noteInput) noteInput.value = existing ? (existing.note || '') : '';
+      if (delBtn) delBtn.classList.toggle('hidden', !existing);
+      document.querySelectorAll('.hl-color-btn').forEach(b => {
+        const active = b.dataset.hlColor === hlEditCtx.color;
+        b.classList.toggle('ring-2', active);
+        b.classList.toggle('ring-amber-500', active);
+      });
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      if (noteInput) setTimeout(() => noteInput.focus(), 60);
+    }
+
+    // --- Daily Reading Goal & Streak Tracker ---
+    const DAILY_GOAL_KEY = 'ebook_ngan_daily_goal_v1';
+    let dailyGoalData = { targetMinutes: 15, days: {} };
+    let lastUserActivityTs = Date.now();
+
+    function getLocalDateKey(dateObj = new Date()) {
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const d = String(dateObj.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function loadDailyGoalData() {
+      try {
+        const raw = localStorage.getItem(DAILY_GOAL_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === 'object') {
+            dailyGoalData.targetMinutes = Math.max(5, Math.min(180, Number(parsed.targetMinutes) || 15));
+            dailyGoalData.days = (parsed.days && typeof parsed.days === 'object') ? parsed.days : {};
+          }
+        }
+      } catch (e) {}
+    }
+
+    function saveDailyGoalData() {
+      try { localStorage.setItem(DAILY_GOAL_KEY, JSON.stringify(dailyGoalData)); } catch (e) {}
+    }
+
+    function computeReadingStreak() {
+      let streak = 0;
+      const cur = new Date();
+      const todayKey = getLocalDateKey(cur);
+      const todaySec = dailyGoalData.days[todayKey] || 0;
+      // Start counting from today if active today, else check yesterday
+      if (todaySec < 60) cur.setDate(cur.getDate() - 1);
+      while (true) {
+        const k = getLocalDateKey(cur);
+        if ((dailyGoalData.days[k] || 0) >= 60) {
+          streak++;
+          cur.setDate(cur.getDate() - 1);
+        } else {
+          break;
+        }
+      }
+      return streak;
+    }
+
+    function updateDailyGoalUI() {
+      const todayKey = getLocalDateKey();
+      const todaySec = dailyGoalData.days[todayKey] || 0;
+      const todayMin = Math.floor(todaySec / 60);
+      const targetMin = dailyGoalData.targetMinutes || 15;
+      const pct = Math.min(100, Math.round((todaySec / (targetMin * 60)) * 100));
+      const streak = computeReadingStreak();
+
+      const pillTxt = document.getElementById('dailyGoalPillText');
+      if (pillTxt) pillTxt.textContent = `🔥 ${streak}n • ${todayMin}/${targetMin}p`;
+
+      const streakBadge = document.getElementById('dailyStreakBadge');
+      if (streakBadge) streakBadge.textContent = `${streak} ngày liên tiếp`;
+
+      const progTxt = document.getElementById('dailyGoalProgressText');
+      if (progTxt) progTxt.textContent = `${todayMin} / ${targetMin} phút`;
+
+      const statusTxt = document.getElementById('dailyGoalStatusText');
+      if (statusTxt) {
+        if (pct >= 100) statusTxt.textContent = 'Hoàn thành hôm nay! 🎉';
+        else statusTxt.textContent = `Còn ${Math.max(1, targetMin - todayMin)} phút nữa`;
+      }
+
+      const bar = document.getElementById('dailyGoalBar');
+      if (bar) {
+        bar.style.width = pct + '%';
+        bar.className = `h-full rounded-full transition-all duration-300 ${pct >= 100 ? 'bg-amber-500' : 'bg-emerald-500'}`;
+      }
+
+      document.querySelectorAll('.goal-min-btn').forEach(btn => {
+        const active = Number(btn.dataset.goalMin) === targetMin;
+        btn.classList.toggle('border-amber-500', active);
+        btn.classList.toggle('text-amber-500', active);
+      });
+    }
+
+    function initDailyGoalTracker() {
+      loadDailyGoalData();
+      updateDailyGoalUI();
+      const markActive = () => { lastUserActivityTs = Date.now(); };
+      ['click', 'keydown', 'scroll', 'touchstart'].forEach(ev => window.addEventListener(ev, markActive, { passive: true }));
+
+      setInterval(() => {
+        const recentlyActive = (Date.now() - lastUserActivityTs) < 90000;
+        if (state.isPlaying || (document.visibilityState === 'visible' && recentlyActive)) {
+          const k = getLocalDateKey();
+          const prevSec = dailyGoalData.days[k] || 0;
+          const nextSec = prevSec + 10;
+          dailyGoalData.days[k] = nextSec;
+          saveDailyGoalData();
+          updateDailyGoalUI();
+          const targetSec = (dailyGoalData.targetMinutes || 15) * 60;
+          if (prevSec < targetSec && nextSec >= targetSec) {
+            showToast(`🎉 Tuyệt vời! Bạn đã hoàn thành mục tiêu đọc ${dailyGoalData.targetMinutes} phút hôm nay!`);
+          }
+        }
+      }, 10000);
     }
 
     function applySpeed(val) {
@@ -1705,8 +2101,15 @@
         span.addEventListener('click', () => {
           jumpToSentence(idx, true);
         });
+        span.addEventListener('dblclick', (ev) => {
+          ev.stopPropagation();
+          jumpToSentence(idx, false);
+          openHighlightModal(state.chapterId, idx);
+        });
         pEl.appendChild(span);
       });
+      applyHighlightsToArticle();
+      applyFontSize();
 
       document.getElementById('btnPrevChapterBottom').disabled = state.chapterId <= 0;
       document.getElementById('btnNextChapterBottom').disabled = state.chapterId >= state.chapters.length - 1;
@@ -2770,6 +3173,130 @@
       document.getElementById('btnFontUp').addEventListener('click', () => { state.fontSize = Math.min(26, state.fontSize + 1); applyFontSize(); saveState(); });
       document.getElementById('btnFontDown').addEventListener('click', () => { state.fontSize = Math.max(14, state.fontSize - 1); applyFontSize(); saveState(); });
 
+      // Typography & Reading Comfort Modal
+      const typoModal = document.getElementById('typographyModal');
+      const openTypoModal = () => {
+        if (!typoModal) return;
+        applyFontSize();
+        typoModal.classList.remove('hidden');
+        typoModal.classList.add('flex');
+      };
+      const closeTypoModal = () => {
+        if (!typoModal) return;
+        typoModal.classList.add('hidden');
+        typoModal.classList.remove('flex');
+      };
+      const btnTypography = document.getElementById('btnTypography');
+      const btnCloseTypography = document.getElementById('btnCloseTypography');
+      if (btnTypography) btnTypography.addEventListener('click', openTypoModal);
+      if (btnCloseTypography) btnCloseTypography.addEventListener('click', closeTypoModal);
+      if (typoModal) typoModal.addEventListener('click', (e) => { if (e.target === typoModal) closeTypoModal(); });
+      document.querySelectorAll('.typo-theme-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.theme = btn.dataset.typoTheme;
+          applyTheme();
+          applyFontSize();
+          saveState();
+        });
+      });
+      document.querySelectorAll('.typo-lh-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.lineHeight = parseFloat(btn.dataset.typoLh) || 1.85;
+          applyFontSize();
+          saveState();
+          showToast('Đã chỉnh giãn dòng: ' + state.lineHeight);
+        });
+      });
+      document.querySelectorAll('.typo-font-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.fontFamily = btn.dataset.typoFont === 'sans' ? 'sans' : 'serif';
+          applyFontSize();
+          saveState();
+        });
+      });
+      const typoFontDown = document.getElementById('typoFontDown');
+      const typoFontUp = document.getElementById('typoFontUp');
+      if (typoFontDown) typoFontDown.addEventListener('click', () => { state.fontSize = Math.max(14, state.fontSize - 1); applyFontSize(); saveState(); });
+      if (typoFontUp) typoFontUp.addEventListener('click', () => { state.fontSize = Math.min(26, state.fontSize + 1); applyFontSize(); saveState(); });
+
+      // Highlight & Note Modal Events
+      const hlModal = document.getElementById('highlightModal');
+      const closeHlModal = () => { if (hlModal) { hlModal.classList.add('hidden'); hlModal.classList.remove('flex'); } };
+      const btnQuickHl = document.getElementById('btnQuickHighlight');
+      const btnAddHlSidebar = document.getElementById('btnAddHighlightSidebar');
+      if (btnQuickHl) btnQuickHl.addEventListener('click', () => openHighlightModal(state.chapterId, state.sentenceIdx));
+      if (btnAddHlSidebar) btnAddHlSidebar.addEventListener('click', () => { closeSidebarMobile(); openHighlightModal(state.chapterId, state.sentenceIdx); });
+      const btnCloseHl = document.getElementById('btnCloseHighlight');
+      const btnCancelHl = document.getElementById('btnCancelHighlight');
+      if (btnCloseHl) btnCloseHl.addEventListener('click', closeHlModal);
+      if (btnCancelHl) btnCancelHl.addEventListener('click', closeHlModal);
+      if (hlModal) hlModal.addEventListener('click', (e) => { if (e.target === hlModal) closeHlModal(); });
+      document.querySelectorAll('.hl-color-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          hlEditCtx.color = btn.dataset.hlColor || 'yellow';
+          document.querySelectorAll('.hl-color-btn').forEach(b => {
+            const active = b.dataset.hlColor === hlEditCtx.color;
+            b.classList.toggle('ring-2', active);
+            b.classList.toggle('ring-amber-500', active);
+          });
+        });
+      });
+      const btnSaveHl = document.getElementById('btnSaveHighlight');
+      if (btnSaveHl) {
+        btnSaveHl.addEventListener('click', () => {
+          const ch = state.chapters[hlEditCtx.chapterId] || { id: hlEditCtx.chapterId, title: '' };
+          const s = (hlEditCtx.chapterId === state.chapterId ? state.sentences[hlEditCtx.sentenceIdx] : null);
+          const noteVal = (document.getElementById('hlNoteInput')?.value || '').trim();
+          const existingIdx = (state.highlights || []).findIndex(h => h.chapterId === hlEditCtx.chapterId && h.sentenceIdx === hlEditCtx.sentenceIdx);
+          const payload = {
+            id: existingIdx >= 0 ? state.highlights[existingIdx].id : Date.now(),
+            chapterId: hlEditCtx.chapterId,
+            chapterTitle: ch.id === 0 ? ch.title : `Ch.${ch.id}: ${ch.title}`,
+            sentenceIdx: hlEditCtx.sentenceIdx,
+            page: s ? (s.page || getCurrentPage()) : getCurrentPage(),
+            snippet: s ? s.text.slice(0, 140) : (existingIdx >= 0 ? state.highlights[existingIdx].snippet : ''),
+            color: hlEditCtx.color || 'yellow',
+            note: noteVal,
+            createdAt: formatNowTime()
+          };
+          if (existingIdx >= 0) state.highlights[existingIdx] = payload;
+          else state.highlights.unshift(payload);
+          saveState();
+          renderHighlights();
+          applyHighlightsToArticle();
+          closeHlModal();
+          showToast(noteVal ? 'Đã lưu Highlight & Ghi chú!' : 'Đã lưu Highlight câu hay!');
+        });
+      }
+      const btnDeleteHl = document.getElementById('btnDeleteHighlight');
+      if (btnDeleteHl) {
+        btnDeleteHl.addEventListener('click', () => {
+          state.highlights = (state.highlights || []).filter(h => !(h.chapterId === hlEditCtx.chapterId && h.sentenceIdx === hlEditCtx.sentenceIdx));
+          saveState();
+          renderHighlights();
+          applyHighlightsToArticle();
+          closeHlModal();
+          showToast('Đã xóa Highlight');
+        });
+      }
+
+      // Daily Reading Goal Controls
+      const dailyGoalPill = document.getElementById('dailyGoalPill');
+      if (dailyGoalPill) {
+        dailyGoalPill.addEventListener('click', () => {
+          switchSidebarTab('progress');
+          openSidebarMobile();
+        });
+      }
+      document.querySelectorAll('.goal-min-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          dailyGoalData.targetMinutes = Number(btn.dataset.goalMin) || 15;
+          saveDailyGoalData();
+          updateDailyGoalUI();
+          showToast(`Đã đặt mục tiêu đọc ${dailyGoalData.targetMinutes} phút mỗi ngày!`);
+        });
+      });
+
       document.getElementById('btnToggleSidebar').addEventListener('click', openSidebarMobile);
       document.getElementById('btnCloseSidebar').addEventListener('click', closeSidebarMobile);
       el.sidebarBackdrop.addEventListener('click', closeSidebarMobile);
@@ -2950,6 +3477,9 @@
         } else if (e.key.toLowerCase() === 'b' && !e.ctrlKey && !e.metaKey) {
           e.preventDefault();
           addCurrentBookmark();
+        } else if (e.key.toLowerCase() === 'h' && !e.ctrlKey && !e.metaKey) {
+          e.preventDefault();
+          openHighlightModal(state.chapterId, state.sentenceIdx);
         } else if (e.key.toLowerCase() === 'z' && !e.ctrlKey && !e.metaKey) {
           e.preventDefault();
           toggleZenMode();
@@ -3003,7 +3533,9 @@
       renderChapterList();
       renderChapterContent();
       renderBookmarks();
+      renderHighlights();
       renderHistoryList();
+      initDailyGoalTracker();
       updatePlayUI();
       lucide.createIcons();
 
