@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ebook-ngan-offline-v7';
+const CACHE_NAME = 'ebook-ngan-offline-v8';
 const CORE_ASSETS = [
   './',
   './index.html',
