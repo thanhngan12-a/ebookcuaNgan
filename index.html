@@ -2,6 +2,7 @@
 <html lang="vi" class="dark">
 <head>
   <meta charset="UTF-8" />
+  <meta name="referrer" content="no-referrer" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Tủ Sách Nói Của Ngân — Nghe Sách Offline</title>
   <meta name="theme-color" content="#0b1120" />
@@ -180,7 +181,7 @@
 <body class="min-h-screen flex flex-col overflow-x-hidden">
 
   <!-- Persistent Audio Elements (Unlocked on first tap for iOS/Android Mobile reliability) -->
-  <audio id="ttsAudioEl" playsinline preload="auto"></audio>
+  <audio id="ttsAudioEl" playsinline preload="auto" referrerpolicy="no-referrer"></audio>
   <audio id="customBgmAudioEl" playsinline loop preload="auto"></audio>
 
   <!-- Top Header -->
@@ -1973,12 +1974,18 @@
       syncWakeLock(state.isPlaying);
     }
 
-    // --- Speech Engine (Mobile-Safe Persistent <audio> + Zero-Gap Preload) ---
+    // --- Speech Engine (Mobile-Safe Persistent <audio> + No-Referrer Online TTS + Reliable Fallback) ---
     let preloadedNextUrl = '';
     let preloadedAudioObj = null;
+    let ttsLoadTimeout = null;
+    let activeSynthUtter = null;
 
     function buildOnlineTtsUrl(text) {
       return 'https://translate.googleapis.com/translate_tts?ie=UTF-8&tl=vi&client=tw-ob&q=' + encodeURIComponent(text);
+    }
+
+    function buildOnlineTtsFallbackUrl(text) {
+      return 'https://translate.google.com/translate_tts?ie=UTF-8&tl=vi&client=gtx&q=' + encodeURIComponent(text);
     }
 
     function stopSpeechInternal() {
@@ -1986,7 +1993,9 @@
       state.isPlayingIntro = false;
       state.isBuffering = false;
       clearTimeout(state.pauseTimeout);
+      clearTimeout(ttsLoadTimeout);
       clearInterval(state.resumeHeartbeat);
+      activeSynthUtter = null;
       try {
         el.ttsAudio.onended = null;
         el.ttsAudio.onerror = null;
@@ -2002,6 +2011,10 @@
         showToast('Trình duyệt không hỗ trợ giọng đọc.');
         return;
       }
+      if (!state.voices || state.voices.length === 0) {
+        state.voices = window.speechSynthesis.getVoices() || [];
+      }
+
       const moodCfg = MOODS[state.mood] || MOODS.sleep;
       let rate = moodCfg.baseRate * state.rateMultiplier;
       let pitch = moodCfg.basePitch;
@@ -2010,13 +2023,23 @@
       else if (options.isQuote) pitch -= 0.03;
 
       const utter = new SpeechSynthesisUtterance(text);
-      const voice = state.voices.find(v => v.voiceURI === state.selectedVoiceURI);
-      if (voice) { utter.voice = voice; utter.lang = voice.lang; }
-      else utter.lang = 'vi-VN';
+      activeSynthUtter = utter;
+
+      let voice = state.voices.find(v => v.voiceURI === state.selectedVoiceURI);
+      if (!voice) {
+        voice = state.voices.find(v => v.lang && v.lang.toLowerCase().startsWith('vi'));
+      }
+      if (voice) {
+        utter.voice = voice;
+        utter.lang = voice.lang;
+      } else {
+        utter.lang = 'vi-VN';
+      }
 
       utter.rate = Math.min(2.2, Math.max(0.55, rate));
       utter.pitch = Math.min(1.4, Math.max(0.7, pitch));
 
+      let finished = false;
       utter.onstart = () => {
         if (myToken !== state.playbackToken) return;
         state.isBuffering = false;
@@ -2024,17 +2047,21 @@
         duckBgmForSpeech(true);
       };
       utter.onend = () => {
-        if (myToken !== state.playbackToken) return;
+        if (finished || myToken !== state.playbackToken) return;
+        finished = true;
+        activeSynthUtter = null;
         clearInterval(state.resumeHeartbeat);
         duckBgmForSpeech(false);
         onDone();
       };
       utter.onerror = (ev) => {
-        if (myToken !== state.playbackToken) return;
+        if (finished || myToken !== state.playbackToken) return;
         if (ev.error === 'interrupted' || ev.error === 'canceled') return;
+        finished = true;
+        activeSynthUtter = null;
         clearInterval(state.resumeHeartbeat);
         pausePlayback();
-        showToast('Không thể phát giọng này. Hãy đổi sang giọng Tiếng Việt tích hợp.');
+        showToast('Máy bạn chưa có giọng Tiếng Việt offline. Hãy thử trình duyệt Microsoft Edge (có sẵn giọng Hoài My cực hay) hoặc kiểm tra mạng.');
       };
 
       state.resumeHeartbeat = setInterval(() => {
@@ -2044,7 +2071,77 @@
         }
       }, 10000);
 
+      try { window.speechSynthesis.resume(); } catch (e) {}
       window.speechSynthesis.speak(utter);
+    }
+
+    function playOnlineTtsWithFallback(text, options, myToken, rate, onDone, useAltEndpoint = false) {
+      if (myToken !== state.playbackToken || !state.isPlaying) return;
+      const url = useAltEndpoint ? buildOnlineTtsFallbackUrl(text) : buildOnlineTtsUrl(text);
+      state.isBuffering = true;
+      updatePlayUI();
+
+      let handledFail = false;
+      const handleFail = () => {
+        if (handledFail || myToken !== state.playbackToken) return;
+        handledFail = true;
+        clearTimeout(ttsLoadTimeout);
+        el.ttsAudio.onplaying = null;
+        el.ttsAudio.onended = null;
+        el.ttsAudio.onerror = null;
+        if (!useAltEndpoint) {
+          playOnlineTtsWithFallback(text, options, myToken, rate, onDone, true);
+          return;
+        }
+        if ('speechSynthesis' in window) {
+          speakViaBrowserSynth(text, options, myToken, onDone);
+        } else {
+          pausePlayback();
+          showToast('Không tải được giọng đọc online. Hãy kiểm tra kết nối mạng.');
+        }
+      };
+
+      el.ttsAudio.onplaying = () => {
+        if (myToken !== state.playbackToken) return;
+        clearTimeout(ttsLoadTimeout);
+        state.isBuffering = false;
+        updatePlayUI();
+        duckBgmForSpeech(true);
+      };
+      el.ttsAudio.onended = () => {
+        if (myToken !== state.playbackToken) return;
+        clearTimeout(ttsLoadTimeout);
+        duckBgmForSpeech(false);
+        onDone();
+      };
+      el.ttsAudio.onerror = handleFail;
+
+      el.ttsAudio.src = url;
+      el.ttsAudio.playbackRate = Math.min(2.2, Math.max(0.65, rate));
+
+      // Preload next chunk in background for zero gap
+      if (!useAltEndpoint && options.nextText) {
+        const nextUrl = buildOnlineTtsUrl(options.nextText);
+        if (nextUrl !== preloadedNextUrl) {
+          preloadedNextUrl = nextUrl;
+          try {
+            preloadedAudioObj = new Audio();
+            preloadedAudioObj.referrerPolicy = 'no-referrer';
+            preloadedAudioObj.preload = 'auto';
+            preloadedAudioObj.src = nextUrl;
+          } catch (e) {}
+        }
+      }
+
+      clearTimeout(ttsLoadTimeout);
+      ttsLoadTimeout = setTimeout(() => {
+        if (myToken === state.playbackToken && state.isBuffering) handleFail();
+      }, 6000);
+
+      const playPromise = el.ttsAudio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(handleFail);
+      }
     }
 
     async function speakSingleText(text, options, myToken, onDone) {
@@ -2091,66 +2188,13 @@
         }
       }
 
-      // 2) Online Vietnamese TTS (automatically skips to local offline voice when device has no internet!)
+      // 2) Online Vietnamese TTS (with no-referrer + dual endpoint + automatic local fallback)
       if ((state.selectedVoiceURI === 'online_vi' && navigator.onLine) || !('speechSynthesis' in window)) {
-        const url = buildOnlineTtsUrl(text);
-        state.isBuffering = true;
-        updatePlayUI();
-
-        el.ttsAudio.src = url;
-        el.ttsAudio.playbackRate = Math.min(2.2, Math.max(0.65, rate));
-
-        // Preload next chunk in background for zero gap
-        if (options.nextText) {
-          const nextUrl = buildOnlineTtsUrl(options.nextText);
-          if (nextUrl !== preloadedNextUrl) {
-            preloadedNextUrl = nextUrl;
-            try {
-              preloadedAudioObj = new Audio();
-              preloadedAudioObj.preload = 'auto';
-              preloadedAudioObj.src = nextUrl;
-            } catch (e) {}
-          }
-        }
-
-        el.ttsAudio.onplaying = () => {
-          if (myToken !== state.playbackToken) return;
-          state.isBuffering = false;
-          updatePlayUI();
-          duckBgmForSpeech(true);
-        };
-        el.ttsAudio.onended = () => {
-          if (myToken !== state.playbackToken) return;
-          duckBgmForSpeech(false);
-          onDone();
-        };
-        el.ttsAudio.onerror = () => {
-          if (myToken !== state.playbackToken) return;
-          // Automatic fallback to browser SpeechSynthesis if online audio blocked on mobile network
-          if ('speechSynthesis' in window) {
-            speakViaBrowserSynth(text, options, myToken, onDone);
-          } else {
-            pausePlayback();
-            showToast('Không tải được giọng đọc. Hãy kiểm tra mạng.');
-          }
-        };
-
-        const playPromise = el.ttsAudio.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(() => {
-            if (myToken !== state.playbackToken) return;
-            if ('speechSynthesis' in window) {
-              speakViaBrowserSynth(text, options, myToken, onDone);
-            } else {
-              pausePlayback();
-              showToast('Hãy chạm nút Phát lần nữa để bắt đầu.');
-            }
-          });
-        }
+        playOnlineTtsWithFallback(text, options, myToken, rate, onDone, false);
         return;
       }
 
-      // 3) Browser Neural Voice (Edge HoaiMy / NamMinh, etc.)
+      // 3) Browser Neural Voice (Edge HoaiMy / NamMinh, Google Tiếng Việt, etc.)
       speakViaBrowserSynth(text, options, myToken, onDone);
     }
 
