@@ -613,8 +613,13 @@
             <span class="wave-bar"></span>
             <span class="wave-bar"></span>
           </div>
+          <div class="inline-flex items-center rounded-lg elevated border p-0.5 shrink-0" role="group" aria-label="Chế độ nhanh Ngủ hoặc Lái xe">
+            <button id="btnPresetSleep" type="button" class="px-2 py-1 rounded-md text-[11px] font-semibold transition hover:text-amber-500" title="Chế độ Ngủ: Giọng êm trầm + Nhạc Đêm Sâu Lắng + Hẹn giờ 30p">🌙 Ngủ</button>
+            <button id="btnPresetDrive" type="button" class="px-2 py-1 rounded-md text-[11px] font-semibold transition hover:text-amber-500" title="Chế độ Lái xe: Giọng sáng tỉnh táo 1.2x + Nhạc nhịp lái xe chống buồn ngủ">🚗 Lái xe</button>
+          </div>
           <select id="moodSelect" class="text-xs px-2 py-1.5 rounded-lg elevated border focus:outline-none focus:border-amber-500 cursor-pointer" title="Phong cách đọc">
-            <option value="sleep">Dễ ngủ (Êm ái, liền mạch)</option>
+            <option value="sleep">🌙 Dễ ngủ (Êm ái, trầm ấm)</option>
+            <option value="drive">🚗 Lái xe (Tỉnh táo, rõ ràng)</option>
             <option value="expressive">Truyền cảm (Tự nhiên)</option>
             <option value="energetic">Rõ ràng &amp; Nhanh vừa</option>
           </select>
@@ -789,6 +794,10 @@
           <span>🍃 Tĩnh Tâm 432Hz (Sóng Dịu Nhẹ)</span>
           <span class="text-[11px]" style="color: var(--text-secondary)">Thiền định</span>
         </button>
+        <button type="button" data-ambient="driving_beat" class="ambient-opt w-full text-left px-3.5 py-2.5 rounded-xl elevated border text-xs font-medium hover:border-amber-500 transition flex items-center justify-between">
+          <span>🚗 Nhịp Lái Xe Tỉnh Táo (Lo-Fi Beat Nhẹ)</span>
+          <span class="text-[11px] text-emerald-400 font-semibold">Chống buồn ngủ</span>
+        </button>
       </div>
 
       <div class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 space-y-2">
@@ -962,7 +971,8 @@
     const STORAGE_KEY = 'audiobook_ngan_v4';
     // Tuned for smooth, flowing, non-dragging bedtime storytelling
     const MOODS = {
-      sleep:      { baseRate: 1.04, basePitch: 0.95, sentencePause: 95,  paraPause: 310 },
+      sleep:      { baseRate: 0.96, basePitch: 0.92, sentencePause: 130, paraPause: 360 },
+      drive:      { baseRate: 1.16, basePitch: 1.08, sentencePause: 60,  paraPause: 200 },
       expressive: { baseRate: 1.08, basePitch: 1.0,  sentencePause: 115, paraPause: 350 },
       energetic:  { baseRate: 1.15, basePitch: 1.03, sentencePause: 75,  paraPause: 240 }
     };
@@ -2268,6 +2278,9 @@
 
         // Smooth fade-in
         bgmMasterGain.gain.cancelScheduledValues(bgmCtx.currentTime);
+        if (bgmFilterNode) {
+          bgmFilterNode.frequency.setTargetAtTime(mode === 'driving_beat' ? 1900 : 680, bgmCtx.currentTime, 0.25);
+        }
         bgmMasterGain.gain.setTargetAtTime(getTargetBgmGain(state.isPlaying), bgmCtx.currentTime, 0.6);
 
         let step = 0;
@@ -2325,6 +2338,55 @@
           };
           tick();
           bgmTimer = setInterval(tick, 6000);
+        } else if (mode === 'driving_beat') {
+          // Upbeat, crisp lo-fi driving pulse (~108 BPM) to keep listeners alert without overpowering speech
+          const chords = [
+            [261.63, 329.63, 392.00], // C major
+            [220.00, 261.63, 329.63], // A minor
+            [174.61, 220.00, 261.63], // F major
+            [196.00, 246.94, 293.66]  // G major
+          ];
+          const bass = [130.81, 110.00, 87.31, 98.00];
+          const playKick = () => {
+            if (!bgmCtx || !bgmFilterNode) return;
+            const t = bgmCtx.currentTime;
+            const osc = bgmCtx.createOscillator();
+            const g = bgmCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(125, t);
+            osc.frequency.exponentialRampToValueAtTime(42, t + 0.14);
+            g.gain.setValueAtTime(0.28, t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+            osc.connect(g); g.connect(bgmFilterNode);
+            osc.start(t); osc.stop(t + 0.2);
+          };
+          const playTickHat = (accent) => {
+            if (!bgmCtx || !bgmFilterNode) return;
+            const t = bgmCtx.currentTime;
+            const osc = bgmCtx.createOscillator();
+            const g = bgmCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(accent ? 1480 : 1120, t);
+            g.gain.setValueAtTime(accent ? 0.045 : 0.025, t);
+            g.gain.exponentialRampToValueAtTime(0.0005, t + 0.05);
+            osc.connect(g); g.connect(bgmFilterNode);
+            osc.start(t); osc.stop(t + 0.06);
+          };
+          const tick = () => {
+            const beatInBar = step % 8;
+            const barIdx = Math.floor(step / 8) % chords.length;
+            if (beatInBar === 0 || beatInBar === 4) playKick();
+            if (beatInBar % 2 === 1) playTickHat(beatInBar === 3 || beatInBar === 7);
+            if (beatInBar === 0) {
+              chords[barIdx].forEach(f => playWarmNote(f, 1.9, 0.09, 'triangle', 0.04));
+              playWarmNote(bass[barIdx], 1.8, 0.14, 'sine', 0.03);
+            } else if (beatInBar === 4) {
+              playWarmNote(chords[barIdx][2], 0.9, 0.07, 'triangle', 0.03);
+            }
+            step++;
+          };
+          tick();
+          bgmTimer = setInterval(tick, 278); // ~108 BPM eighth-note pulse
         }
       } catch (e) {}
     }
@@ -3215,6 +3277,64 @@
 
       el.progressSlider.addEventListener('input', (e) => jumpToSentence(parseInt(e.target.value, 10), state.isPlaying));
       el.moodSelect.addEventListener('change', (e) => { state.mood = e.target.value; saveState(); if (state.isPlaying) playCurrentSentence(); });
+      // 1-Tap Sleep Mode vs Driving Mode Presets
+      const updatePresetButtonsUI = () => {
+        const bSleep = document.getElementById('btnPresetSleep');
+        const bDrive = document.getElementById('btnPresetDrive');
+        const isSleep = state.mood === 'sleep';
+        const isDrive = state.mood === 'drive';
+        if (bSleep) {
+          bSleep.classList.toggle('bg-amber-500', isSleep);
+          bSleep.classList.toggle('text-slate-950', isSleep);
+        }
+        if (bDrive) {
+          bDrive.classList.toggle('bg-emerald-500', isDrive);
+          bDrive.classList.toggle('text-slate-950', isDrive);
+        }
+      };
+
+      const applyListeningPreset = (preset) => {
+        if (preset === 'sleep') {
+          state.mood = 'sleep';
+          el.moodSelect.value = 'sleep';
+          applySpeed(1.0);
+          state.ambientMode = 'deep_night';
+          state.ambientVol = 0.18;
+          el.ambientVolSlider.value = 18;
+          el.ambientVolText.textContent = '18%';
+          el.ambientLabel.textContent = 'Đêm sâu lắng';
+          document.getElementById('btnAmbient').classList.add('border-amber-500', 'text-amber-500');
+          if (state.timerMode === 'off') setTimer(30);
+          if (state.theme === 'light') { state.theme = 'dark'; applyTheme(); }
+          if (state.isPlaying) { startBgmMusic('deep_night'); playCurrentSentence(); }
+          saveState();
+          updatePresetButtonsUI();
+          showToast('🌙 Chế độ Ngủ: Giọng êm trầm 1.0x • Nhạc Đêm Sâu Lắng • Hẹn giờ 30p');
+        } else if (preset === 'drive') {
+          state.mood = 'drive';
+          el.moodSelect.value = 'drive';
+          applySpeed(1.2);
+          state.ambientMode = 'driving_beat';
+          state.ambientVol = 0.16;
+          el.ambientVolSlider.value = 16;
+          el.ambientVolText.textContent = '16%';
+          el.ambientLabel.textContent = 'Lái xe tỉnh táo';
+          document.getElementById('btnAmbient').classList.add('border-amber-500', 'text-amber-500');
+          clearTimer();
+          if (state.isPlaying) { startBgmMusic('driving_beat'); playCurrentSentence(); }
+          saveState();
+          updatePresetButtonsUI();
+          showToast('🚗 Chế độ Lái xe: Giọng sáng tỉnh táo 1.2x • Nhịp Lo-Fi chống buồn ngủ');
+        }
+      };
+
+      const btnPresetSleep = document.getElementById('btnPresetSleep');
+      const btnPresetDrive = document.getElementById('btnPresetDrive');
+      if (btnPresetSleep) btnPresetSleep.addEventListener('click', () => applyListeningPreset('sleep'));
+      if (btnPresetDrive) btnPresetDrive.addEventListener('click', () => applyListeningPreset('drive'));
+      el.moodSelect.addEventListener('change', updatePresetButtonsUI);
+      updatePresetButtonsUI();
+
       el.voiceSelect.addEventListener('change', (e) => {
         state.selectedVoiceURI = e.target.value;
         preloadedNextUrl = '';
@@ -3494,7 +3614,7 @@
       document.querySelectorAll('.timer-opt').forEach(btn => btn.addEventListener('click', () => setTimer(btn.dataset.timer)));
 
       // Soulful Blended Music Modal
-      const bgmNames = { off: 'Nhạc nền', deep_night: 'Đêm sâu lắng', cello_pad: 'Giấc ngủ sâu', rain_piano: 'Mưa & Piano', alpha_zen: 'Tĩnh tâm 432Hz' };
+      const bgmNames = { off: 'Nhạc nền', deep_night: 'Đêm sâu lắng', cello_pad: 'Giấc ngủ sâu', rain_piano: 'Mưa & Piano', alpha_zen: 'Tĩnh tâm 432Hz', driving_beat: 'Lái xe tỉnh táo' };
       document.getElementById('btnAmbient').addEventListener('click', () => { el.ambientModal.classList.remove('hidden'); el.ambientModal.classList.add('flex'); });
       document.getElementById('btnCloseAmbient').addEventListener('click', () => { el.ambientModal.classList.add('hidden'); el.ambientModal.classList.remove('flex'); });
       document.querySelectorAll('.ambient-opt').forEach(btn => {
@@ -3678,7 +3798,7 @@
       el.btnAutoScroll.classList.toggle('text-amber-500', state.autoScroll);
       el.btnAutoScroll.classList.toggle('border-amber-500/40', state.autoScroll);
 
-      const bgmNames = { off: 'Nhạc nền', deep_night: 'Đêm sâu lắng', cello_pad: 'Giấc ngủ sâu', rain_piano: 'Mưa & Piano', alpha_zen: 'Tĩnh tâm 432Hz' };
+      const bgmNames = { off: 'Nhạc nền', deep_night: 'Đêm sâu lắng', cello_pad: 'Giấc ngủ sâu', rain_piano: 'Mưa & Piano', alpha_zen: 'Tĩnh tâm 432Hz', driving_beat: 'Lái xe tỉnh táo' };
       el.ambientLabel.textContent = bgmNames[state.ambientMode] || 'Nhạc nền';
       if (state.ambientMode !== 'off') {
         document.getElementById('btnAmbient').classList.add('border-amber-500', 'text-amber-500');
