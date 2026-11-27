@@ -971,10 +971,10 @@
     const STORAGE_KEY = 'audiobook_ngan_v4';
     // Tuned for smooth, flowing, non-dragging bedtime storytelling
     const MOODS = {
-      sleep:      { baseRate: 0.96, basePitch: 0.92, sentencePause: 130, paraPause: 360 },
-      drive:      { baseRate: 1.16, basePitch: 1.08, sentencePause: 60,  paraPause: 200 },
-      expressive: { baseRate: 1.08, basePitch: 1.0,  sentencePause: 115, paraPause: 350 },
-      energetic:  { baseRate: 1.15, basePitch: 1.03, sentencePause: 75,  paraPause: 240 }
+      sleep:      { baseRate: 0.96, basePitch: 0.92, sentencePause: 30,  paraPause: 130 },
+      drive:      { baseRate: 1.16, basePitch: 1.08, sentencePause: 0,   paraPause: 60  },
+      expressive: { baseRate: 1.08, basePitch: 1.0,  sentencePause: 25,  paraPause: 110 },
+      energetic:  { baseRate: 1.15, basePitch: 1.03, sentencePause: 0,   paraPause: 70  }
     };
 
     const state = {
@@ -2522,7 +2522,7 @@
       return 'https://translate.google.com/translate_tts?ie=UTF-8&tl=vi&client=gtx&q=' + encodeURIComponent(text);
     }
 
-    function stopSpeechInternal() {
+    function stopSpeechInternal(seamless = false) {
       state.playbackToken++;
       state.isPlayingIntro = false;
       state.isBuffering = false;
@@ -2535,9 +2535,9 @@
         el.ttsAudio.onended = null;
         el.ttsAudio.onerror = null;
         el.ttsAudio.onplaying = null;
-        el.ttsAudio.pause();
+        if (!seamless) el.ttsAudio.pause();
       } catch (e) {}
-      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      if (!seamless && 'speechSynthesis' in window) window.speechSynthesis.cancel();
     }
 
     function speakViaBrowserSynth(text, options, myToken, onDone) {
@@ -2635,12 +2635,17 @@
         }
       }, 1000);
 
-      // Delay 120ms after cancel() so iOS Safari / Android Chrome flushes the previous voice cleanly
-      state.pauseTimeout = setTimeout(() => {
-        if (myToken !== state.playbackToken || !state.isPlaying) return;
+      // When chaining seamlessly after onend, speak immediately (0ms); after manual cancel(), wait 45ms for mobile flush
+      if (options.seamless) {
         try { window.speechSynthesis.resume(); } catch (e) {}
         window.speechSynthesis.speak(utter);
-      }, 120);
+      } else {
+        state.pauseTimeout = setTimeout(() => {
+          if (myToken !== state.playbackToken || !state.isPlaying) return;
+          try { window.speechSynthesis.resume(); } catch (e) {}
+          window.speechSynthesis.speak(utter);
+        }, 45);
+      }
     }
 
     function playOnlineTtsWithFallback(text, options, myToken, rate, onDone, useAltEndpoint = false) {
@@ -2853,13 +2858,13 @@
       runNextIntroChunk();
     }
 
-    function playCurrentSentence() {
-      stopSpeechInternal();
+    function playCurrentSentence(seamless = false) {
+      stopSpeechInternal(seamless);
       const myToken = state.playbackToken;
       const s = state.sentences[state.sentenceIdx];
       if (!s) return;
 
-      highlightActiveSentence(true);
+      highlightActiveSentence(!document.hidden);
       updateProgressUI();
       recordReadingHistory();
       saveState();
@@ -2871,15 +2876,15 @@
         isQuestion: s.isQuestion,
         isExclaim: s.isExclaim,
         isQuote: s.isQuote,
+        seamless,
         nextText: nextS ? nextS.text : ''
       }, myToken, () => {
         if (myToken !== state.playbackToken || !state.isPlaying) return;
-        const delay = s.isParaEnd ? moodCfg.paraPause : moodCfg.sentencePause;
-        state.pauseTimeout = setTimeout(() => {
+        const advanceNext = () => {
           if (myToken !== state.playbackToken || !state.isPlaying) return;
           if (state.sentenceIdx + 1 < state.sentences.length) {
             state.sentenceIdx++;
-            playCurrentSentence();
+            playCurrentSentence(true);
           } else {
             state.completedChapters[state.chapterId] = true;
             renderChapterList(el.chapterSearch.value);
@@ -2896,7 +2901,16 @@
               showToast('Bạn đã nghe xong toàn bộ cuốn sách!');
             }
           }
-        }, Math.max(40, delay / state.rateMultiplier));
+        };
+
+        const rawDelay = s.isParaEnd ? moodCfg.paraPause : moodCfg.sentencePause;
+        const delayMs = Math.round(rawDelay / state.rateMultiplier);
+        // CRITICAL for iOS/Android background playback: chain synchronously inside onended when hidden or delay is tiny!
+        if (document.hidden || delayMs <= 35) {
+          advanceNext();
+        } else {
+          state.pauseTimeout = setTimeout(advanceNext, delayMs);
+        }
       });
     }
 
