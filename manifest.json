@@ -1,0 +1,19 @@
+{
+  "name": "Tủ Sách Nói Của Ngân",
+  "short_name": "Sách Nói",
+  "description": "Nghe sách nói truyền cảm, dễ ngủ, nhạc nền sâu lắng và đọc offline không cần mạng.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b1120",
+  "theme_color": "#0b1120",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%230b1120'/%3E%3Ccircle cx='256' cy='256' r='160' fill='%23f59e0b' fill-opacity='0.18'/%3E%3Cpath d='M176 168h112c28 0 48 20 48 48v144c-16-12-36-18-56-18H176V168zm160 0h0' fill='none' stroke='%23f59e0b' stroke-width='26' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpolygon points='236,214 316,256 236,298' fill='%23f59e0b'/%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
