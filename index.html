@@ -1942,10 +1942,14 @@
       const otherVoices = all.filter(v => !v.lang || !v.lang.toLowerCase().startsWith('vi'));
 
       const voiceScore = v => {
-        const n = v.name || '';
-        if (n.includes('Natural') || n.includes('Neural') || n.includes('HoaiMy') || n.includes('NamMinh')) return 4;
-        if (n.includes('Online')) return 3;
-        if (n.includes('Google')) return 2;
+        const n = (v.name || '').toLowerCase();
+        const u = (v.voiceURI || '').toLowerCase();
+        if (n.includes('siri') || u.includes('siri')) return 6;
+        if (n.includes('premium') || u.includes('premium') || n.includes('enhanced') || u.includes('enhanced') || n.includes('nâng cao')) return 5;
+        if (n.includes('natural') || n.includes('neural') || n.includes('hoaimy') || n.includes('namminh')) return 4;
+        if (n.includes('linh') || u.includes('linh')) return 3.5;
+        if (n.includes('online')) return 3;
+        if (n.includes('google')) return 2;
         return 1;
       };
       viVoices.sort((a, b) => voiceScore(b) - voiceScore(a));
@@ -1966,12 +1970,17 @@
 
       if (viVoices.length > 0) {
         const grp = document.createElement('optgroup');
-        grp.label = 'Giọng Tiếng Việt trên trình duyệt (Khuyên dùng)';
+        grp.label = 'Giọng Tiếng Việt trên máy (Siri / Linh / Edge)';
         viVoices.forEach(v => {
           const opt = document.createElement('option');
           opt.value = v.voiceURI;
-          const isNatural = voiceScore(v) >= 4;
-          opt.textContent = (isNatural ? '★ ' : '🇻🇳 ') + v.name.replace('Microsoft ', '').replace(' Online (Natural)', ' (Truyền cảm)');
+          const sc = voiceScore(v);
+          const u = (v.voiceURI || '').toLowerCase();
+          let label = v.name.replace('Microsoft ', '').replace(' Online (Natural)', ' (Truyền cảm)');
+          if ((u.includes('enhanced') || u.includes('premium')) && !label.toLowerCase().includes('enhanced') && !label.toLowerCase().includes('nâng cao') && !label.toLowerCase().includes('premium')) {
+            label += ' (Nâng cao)';
+          }
+          opt.textContent = (sc >= 4 ? '★ ' : '🇻🇳 ') + label;
           grp.appendChild(opt);
         });
         el.voiceSelect.appendChild(grp);
