@@ -195,6 +195,7 @@
   <!-- Persistent Audio Elements (Unlocked on first tap for iOS/Android Mobile reliability) -->
   <audio id="ttsAudioEl" playsinline preload="auto" referrerpolicy="no-referrer"></audio>
   <audio id="customBgmAudioEl" playsinline loop preload="auto"></audio>
+  <audio id="bgKeepAliveEl" playsinline loop preload="auto"></audio>
 
   <!-- Top Header -->
   <header class="surface border-b sticky top-0 z-30 px-3 sm:px-6 py-2.5 flex items-center justify-between gap-2 backdrop-blur-md bg-opacity-95">
@@ -2326,8 +2327,51 @@
     }
 
     // --- Play / Pause UI with Smooth Morph + Buffering State ---
-    // --- Lock-Screen Media Session & Screen Wake Lock ---
+    // --- Lock-Screen Media Session (Spotify-style Notification Bar), Background Keep-Alive & Wake Lock ---
     let wakeLockSentinel = null;
+    let silentKeepAliveUrl = '';
+
+    function createSilentWavUrl() {
+      if (silentKeepAliveUrl) return silentKeepAliveUrl;
+      // 1-second silent PCM WAV (8kHz, 8-bit mono) so OS keeps Media Session & background audio alive between sentences
+      const sampleRate = 8000;
+      const numSamples = sampleRate;
+      const buf = new ArrayBuffer(44 + numSamples);
+      const view = new DataView(buf);
+      const writeStr = (off, str) => { for (let i = 0; i < str.length; i++) view.setUint8(off + i, str.charCodeAt(i)); };
+      writeStr(0, 'RIFF');
+      view.setUint32(4, 36 + numSamples, true);
+      writeStr(8, 'WAVE');
+      writeStr(12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, 1, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate, true);
+      view.setUint16(32, 1, true);
+      view.setUint16(34, 8, true);
+      writeStr(36, 'data');
+      view.setUint32(40, numSamples, true);
+      for (let i = 0; i < numSamples; i++) view.setUint8(44 + i, 128); // 128 = silence in unsigned 8-bit PCM
+      silentKeepAliveUrl = URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+      return silentKeepAliveUrl;
+    }
+
+    function setBackgroundKeepAlive(active) {
+      const keepEl = document.getElementById('bgKeepAliveEl');
+      if (!keepEl) return;
+      try {
+        if (active) {
+          if (!keepEl.src) keepEl.src = createSilentWavUrl();
+          keepEl.volume = 0.01;
+          const p = keepEl.play();
+          if (p && typeof p.catch === 'function') p.catch(() => {});
+        } else {
+          keepEl.pause();
+        }
+      } catch (e) {}
+    }
+
     async function syncWakeLock(active) {
       if (!('wakeLock' in navigator)) return;
       try {
@@ -2345,12 +2389,25 @@
       if (!('mediaSession' in navigator)) return;
       try {
         const ch = state.chapters[state.chapterId] || { title: '' };
+        const headerImg = document.querySelector('header img');
+        const artwork = [];
+        if (headerImg && headerImg.src) {
+          artwork.push({ src: headerImg.src, sizes: '512x512', type: 'image/jpeg' });
+        }
         navigator.mediaSession.metadata = new MediaMetadata({
-          title: ch.title ? `${state.bookTitle} — ${ch.title}` : state.bookTitle,
-          artist: state.bookAuthor || 'Tủ Sách Nói Của Ngân',
-          album: 'Tủ Sách Nói Của Ngân (Offline)'
+          title: ch.title || state.bookTitle,
+          artist: `${state.bookTitle}${state.bookAuthor ? ' • ' + state.bookAuthor : ''}`,
+          album: 'Tủ Sách Nói Của Ngân',
+          artwork
         });
         navigator.mediaSession.playbackState = state.isPlaying ? 'playing' : 'paused';
+        if (typeof navigator.mediaSession.setPositionState === 'function' && state.sentences.length > 0) {
+          navigator.mediaSession.setPositionState({
+            duration: Math.max(1, state.sentences.length),
+            playbackRate: 1,
+            position: Math.min(state.sentences.length, Math.max(0, state.sentenceIdx))
+          });
+        }
       } catch (e) {}
     }
 
@@ -2359,6 +2416,7 @@
       const safeSet = (action, fn) => { try { navigator.mediaSession.setActionHandler(action, fn); } catch (e) {} };
       safeSet('play', () => { if (!state.isPlaying) togglePlayPause(); });
       safeSet('pause', () => { if (state.isPlaying) togglePlayPause(); });
+      safeSet('stop', () => { if (state.isPlaying) pausePlayback(); });
       safeSet('previoustrack', () => jumpToSentence(state.sentenceIdx - 1, state.isPlaying));
       safeSet('nexttrack', () => jumpToSentence(state.sentenceIdx + 1, state.isPlaying));
       safeSet('seekbackward', () => jumpToSentence(state.sentenceIdx - 1, state.isPlaying));
@@ -2696,6 +2754,7 @@
 
     function startPlayback(forceIntro = false) {
       state.isPlaying = true;
+      setBackgroundKeepAlive(true);
       updatePlayUI();
       if (state.ambientMode !== 'off') startBgmMusic(state.ambientMode);
       if (forceIntro || (state.playIntroEnabled && state.sentenceIdx === 0)) {
@@ -2708,6 +2767,7 @@
     function pausePlayback() {
       state.isPlaying = false;
       state.isBuffering = false;
+      setBackgroundKeepAlive(false);
       el.chapterIntroCard.classList.remove('ring-2', 'ring-amber-500/70');
       stopSpeechInternal();
       fadeOutBgm(0.6); // Smooth fade-out instead of abrupt stop!
