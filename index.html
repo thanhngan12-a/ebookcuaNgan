@@ -2006,11 +2006,10 @@
         el.voiceSelect.appendChild(grp2);
       }
 
-      const hasNaturalVi = viVoices.length > 0 && voiceScore(viVoices[0]) >= 4;
       if (state.ttsProvider !== 'free' && state.ttsApiKey) {
         state.selectedVoiceURI = 'studio_pro';
       } else if (state.selectedVoiceURI && (state.selectedVoiceURI === 'online_vi' || all.some(v => v.voiceURI === state.selectedVoiceURI))) {
-        if (state.selectedVoiceURI === 'online_vi' && hasNaturalVi) state.selectedVoiceURI = viVoices[0].voiceURI;
+        // Keep user's explicit voice choice untouched
       } else if (viVoices.length > 0) {
         state.selectedVoiceURI = viVoices[0].voiceURI;
       } else {
@@ -2481,9 +2480,8 @@
         showToast('Trình duyệt không hỗ trợ giọng đọc.');
         return;
       }
-      if (!state.voices || state.voices.length === 0) {
-        state.voices = window.speechSynthesis.getVoices() || [];
-      }
+      const freshVoices = window.speechSynthesis.getVoices() || [];
+      if (freshVoices.length > 0) state.voices = freshVoices;
 
       const moodCfg = MOODS[state.mood] || MOODS.sleep;
       let rate = moodCfg.baseRate * state.rateMultiplier;
@@ -2496,6 +2494,9 @@
       activeSynthUtter = utter;
 
       let voice = state.voices.find(v => v.voiceURI === state.selectedVoiceURI);
+      if (!voice && state.selectedVoiceURI && state.selectedVoiceURI !== 'online_vi' && state.selectedVoiceURI !== 'studio_pro') {
+        voice = state.voices.find(v => v.name === state.selectedVoiceURI);
+      }
       if (!voice) {
         voice = state.voices.find(v => v.lang && v.lang.toLowerCase().startsWith('vi'));
       }
@@ -2541,8 +2542,12 @@
         }
       }, 10000);
 
-      try { window.speechSynthesis.resume(); } catch (e) {}
-      window.speechSynthesis.speak(utter);
+      // Delay 120ms after cancel() so iOS Safari / Android Chrome flushes the previous voice cleanly
+      state.pauseTimeout = setTimeout(() => {
+        if (myToken !== state.playbackToken || !state.isPlaying) return;
+        try { window.speechSynthesis.resume(); } catch (e) {}
+        window.speechSynthesis.speak(utter);
+      }, 120);
     }
 
     function playOnlineTtsWithFallback(text, options, myToken, rate, onDone, useAltEndpoint = false) {
@@ -3138,7 +3143,24 @@
 
       el.progressSlider.addEventListener('input', (e) => jumpToSentence(parseInt(e.target.value, 10), state.isPlaying));
       el.moodSelect.addEventListener('change', (e) => { state.mood = e.target.value; saveState(); if (state.isPlaying) playCurrentSentence(); });
-      el.voiceSelect.addEventListener('change', (e) => { state.selectedVoiceURI = e.target.value; saveState(); if (state.isPlaying) playCurrentSentence(); });
+      el.voiceSelect.addEventListener('change', (e) => {
+        state.selectedVoiceURI = e.target.value;
+        preloadedNextUrl = '';
+        preloadedAudioObj = null;
+        saveState();
+        const optText = e.target.options[e.target.selectedIndex]?.textContent || 'giọng mới';
+        showToast('Đã chuyển sang: ' + optText);
+        if (state.isPlaying) {
+          stopSpeechInternal();
+          state.isBuffering = true;
+          updatePlayUI();
+          const switchToken = state.playbackToken;
+          state.pauseTimeout = setTimeout(() => {
+            if (switchToken !== state.playbackToken || !state.isPlaying) return;
+            playCurrentSentence();
+          }, 150);
+        }
+      });
 
       el.btnAutoScroll.addEventListener('click', () => {
         state.autoScroll = !state.autoScroll;
