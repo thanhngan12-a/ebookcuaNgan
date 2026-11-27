@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ebook-ngan-offline-v11';
+const CACHE_NAME = 'ebook-ngan-offline-v12';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -26,7 +26,7 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
 
   // Never cache live TTS or API calls
-  if (req.url.includes('translate.googleapis.com') || req.url.includes('translate.google.com') || req.url.includes('api.openai.com') || req.url.includes('api.elevenlabs.io')) {
+  if (req.url.includes('translate.googleapis.com') || req.url.includes('translate.google.com') || req.url.includes('generativelanguage.googleapis.com') || req.url.includes('api.openai.com') || req.url.includes('api.elevenlabs.io')) {
     return;
   }
 

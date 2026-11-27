@@ -638,15 +638,17 @@
             <span class="wave-bar"></span>
             <span class="wave-bar"></span>
           </div>
-          <div class="inline-flex items-center rounded-lg elevated border p-0.5 shrink-0" role="group" aria-label="Chế độ nhanh Ngủ hoặc Lái xe">
+          <div class="inline-flex items-center rounded-lg elevated border p-0.5 shrink-0" role="group" aria-label="Chế độ nhanh Làm việc, Lái xe hoặc Ngủ">
+            <button id="btnPresetWork" type="button" class="px-2 py-1 rounded-md text-[11px] font-semibold transition hover:text-sky-400" title="Chế độ Làm việc / Video Review: Giọng nhanh sáng sắc nét 1.3x, tắt nhạc ru ngủ để tỉnh táo 100%">⚡ Làm việc</button>
+            <button id="btnPresetDrive" type="button" class="px-2 py-1 rounded-md text-[11px] font-semibold transition hover:text-emerald-400" title="Chế độ Lái xe: Giọng sáng tỉnh táo 1.2x + Nhạc nhịp Lo-Fi chống buồn ngủ">🚗 Lái xe</button>
             <button id="btnPresetSleep" type="button" class="px-2 py-1 rounded-md text-[11px] font-semibold transition hover:text-amber-500" title="Chế độ Ngủ: Giọng êm trầm + Nhạc Đêm Sâu Lắng + Hẹn giờ 30p">🌙 Ngủ</button>
-            <button id="btnPresetDrive" type="button" class="px-2 py-1 rounded-md text-[11px] font-semibold transition hover:text-amber-500" title="Chế độ Lái xe: Giọng sáng tỉnh táo 1.2x + Nhạc nhịp lái xe chống buồn ngủ">🚗 Lái xe</button>
           </div>
           <select id="moodSelect" class="text-xs px-2 py-1.5 rounded-lg elevated border focus:outline-none focus:border-amber-500 cursor-pointer" title="Phong cách đọc">
+            <option value="review">🎬 Review Video (Nhanh, cuốn như YouTube)</option>
+            <option value="work">⚡ Làm việc (Tỉnh táo, sắc nét)</option>
+            <option value="drive">🚗 Lái xe (Khỏe khoắn, rõ ràng)</option>
+            <option value="expressive">🎙️ Podcast (Tự nhiên, rõ chữ)</option>
             <option value="sleep">🌙 Dễ ngủ (Êm ái, trầm ấm)</option>
-            <option value="drive">🚗 Lái xe (Tỉnh táo, rõ ràng)</option>
-            <option value="expressive">Truyền cảm (Tự nhiên)</option>
-            <option value="energetic">Rõ ràng &amp; Nhanh vừa</option>
           </select>
           <select id="voiceSelect" class="text-xs px-2 py-1.5 rounded-lg elevated border focus:outline-none focus:border-amber-500 max-w-[135px] sm:max-w-[195px] truncate cursor-pointer" title="Chọn giọng đọc"></select>
         </div>
@@ -868,28 +870,38 @@
       </div>
 
       <div class="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs space-y-1.5">
-        <div class="font-semibold text-amber-400">Mẹo nghe giọng truyền cảm miễn phí trên điện thoại &amp; máy tính:</div>
+        <div class="font-semibold text-amber-400">🎬 Mẹo nghe giọng như Video Review YouTube / TikTok (MIỄN PHÍ 100%):</div>
         <p style="color: var(--text-primary)">
-          Mở link GitHub Pages bằng trình duyệt <strong>Microsoft Edge</strong> để dùng miễn phí giọng Neural <strong>Hoài My (Nữ)</strong> hoặc <strong>Nam Minh (Nam)</strong> — nhấn nhá trầm ấm, rất dễ ngủ.
+          1) Mở link web này bằng app <strong>Microsoft Edge</strong> (miễn phí trên iPhone/Android/PC) → chọn giọng <strong>★ Hoài My</strong> hoặc <strong>★ Nam Minh</strong> (chính là giọng 90% video review TikTok/YouTube) + bấm nút <strong>⚡ Làm việc</strong>!
+        </p>
+        <p style="color: var(--text-secondary)">
+          2) Hoặc dùng <strong>Google Gemini 3.8 TTS</strong> bên dưới (lấy API Key miễn phí tại <em>aistudio.google.com</em>) — giọng đọc sống động, có nhấn nhá như người thật quay video!
         </p>
       </div>
 
       <div class="space-y-2.5 pt-1">
-        <div class="text-xs font-semibold">Hoặc kết nối giọng Studio (Tùy chọn API Key)</div>
+        <div class="text-xs font-semibold">Kết nối giọng AI Studio (Giọng Video / Podcast tự nhiên)</div>
         <div class="grid grid-cols-2 gap-2">
           <select id="ttsProviderSelect" class="px-2.5 py-2 text-xs rounded-lg elevated border focus:outline-none focus:border-amber-500">
             <option value="free">Miễn phí (Tích hợp / Edge)</option>
+            <option value="gemini">★ Google Gemini TTS (Khuyên dùng - Có Free)</option>
             <option value="openai">OpenAI TTS (tts-1)</option>
             <option value="elevenlabs">ElevenLabs Multilingual v2</option>
           </select>
           <select id="ttsPremiumVoiceSelect" class="px-2.5 py-2 text-xs rounded-lg elevated border focus:outline-none focus:border-amber-500">
-            <option value="nova">Nova (Nữ ấm áp)</option>
-            <option value="shimmer">Shimmer (Nữ dịu dàng)</option>
-            <option value="onyx">Onyx (Nam trầm ấm)</option>
-            <option value="alloy">Alloy (Trung tính)</option>
+            <option value="Puck">Puck (Nam trẻ năng lượng - Video)</option>
+            <option value="Kore">Kore (Nữ sắc nét tỉnh táo)</option>
+            <option value="Zephyr">Zephyr (Tươi sáng cuốn hút)</option>
+            <option value="Fenrir">Fenrir (Nam mạnh mẽ - Review)</option>
+            <option value="Aoede">Aoede (Nữ Podcast tự nhiên)</option>
+            <option value="coral">Coral (OpenAI - Tươi tắn)</option>
+            <option value="ash">Ash (OpenAI - Nam dứt khoát)</option>
+            <option value="nova">Nova (OpenAI - Nữ ấm áp)</option>
+            <option value="onyx">Onyx (OpenAI - Nam trầm)</option>
+            <option value="alloy">Alloy (OpenAI - Trung tính)</option>
           </select>
         </div>
-        <input id="ttsApiKeyInput" type="password" placeholder="Dán API Key (sk-... hoặc ElevenLabs key) nếu dùng Studio" class="w-full px-3 py-2 text-xs rounded-lg elevated border focus:outline-none focus:border-amber-500" />
+        <input id="ttsApiKeyInput" type="password" placeholder="Dán API Key (AIza... của Gemini, sk-... của OpenAI, hoặc ElevenLabs)" class="w-full px-3 py-2 text-xs rounded-lg elevated border focus:outline-none focus:border-amber-500" />
         <div class="flex justify-end gap-2 pt-1">
           <button id="btnClearApiKey" type="button" class="px-3 py-1.5 rounded-lg elevated border text-xs font-medium">Dùng miễn phí</button>
           <button id="btnSaveVoiceSettings" type="button" class="px-4 py-1.5 rounded-lg bg-amber-500 text-slate-950 text-xs font-semibold hover:bg-amber-400">Lưu cài đặt</button>
@@ -996,10 +1008,11 @@
     const STORAGE_KEY = 'audiobook_ngan_v4';
     // Tuned for smooth, flowing, non-dragging bedtime storytelling
     const MOODS = {
-      sleep:      { baseRate: 0.96, basePitch: 0.92, sentencePause: 30,  paraPause: 130 },
-      drive:      { baseRate: 1.16, basePitch: 1.08, sentencePause: 0,   paraPause: 60  },
-      expressive: { baseRate: 1.08, basePitch: 1.0,  sentencePause: 25,  paraPause: 110 },
-      energetic:  { baseRate: 1.15, basePitch: 1.03, sentencePause: 0,   paraPause: 70  }
+      review:     { baseRate: 1.24, basePitch: 1.09, sentencePause: 0,   paraPause: 50,  aiStyle: 'energetic, lively Vietnamese YouTube video narrator, crisp, engaging, fast-paced, never monotone' },
+      work:       { baseRate: 1.15, basePitch: 1.06, sentencePause: 0,   paraPause: 60,  aiStyle: 'clear, upbeat, alert Vietnamese audiobook narrator for working and staying focused, crisp articulation' },
+      drive:      { baseRate: 1.16, basePitch: 1.08, sentencePause: 0,   paraPause: 60,  aiStyle: 'confident, bright, energetic Vietnamese narrator to keep a driver wide awake and engaged' },
+      expressive: { baseRate: 1.08, basePitch: 1.02, sentencePause: 25,  paraPause: 110, aiStyle: 'natural, expressive Vietnamese podcast host, conversational and warm' },
+      sleep:      { baseRate: 0.96, basePitch: 0.92, sentencePause: 30,  paraPause: 130, aiStyle: 'soft, gentle, calm slow bedtime storyteller' }
     };
 
     const state = {
@@ -1016,11 +1029,11 @@
       isPlayingIntro: false,
       playIntroEnabled: true,
       playbackToken: 0,
-      rateMultiplier: 1.1,
-      mood: 'sleep',
+      rateMultiplier: 1.2,
+      mood: 'work',
       selectedVoiceURI: '',
       ttsProvider: 'free',
-      ttsPremiumVoice: 'nova',
+      ttsPremiumVoice: 'Puck',
       ttsApiKey: '',
       voices: [],
       autoScroll: true,
@@ -1039,7 +1052,7 @@
       timerMode: 'off',
       timerSecondsLeft: 0,
       timerInterval: null,
-      ambientMode: 'deep_night', // Default to soulful blended music!
+      ambientMode: 'off', // Off by default so voice stays crisp and awake!
       ambientVol: 0.20,
       customBgmUrl: '',
       customBgmName: '',
@@ -1996,8 +2009,10 @@
         grpPro.label = 'Giọng Studio Truyền Cảm';
         const proOpt = document.createElement('option');
         proOpt.value = 'studio_pro';
-        proOpt.textContent = state.ttsProvider === 'openai'
-          ? `★ OpenAI ${state.ttsPremiumVoice.toUpperCase()} (Truyền cảm)`
+        proOpt.textContent = state.ttsProvider === 'gemini'
+          ? `★ Gemini AI ${state.ttsPremiumVoice || 'Puck'} (Giọng Video)`
+          : state.ttsProvider === 'openai'
+          ? `★ OpenAI ${(state.ttsPremiumVoice || 'coral').toUpperCase()} (Studio)`
           : '★ ElevenLabs Studio';
         grpPro.appendChild(proOpt);
         el.voiceSelect.appendChild(grpPro);
@@ -2789,31 +2804,74 @@
       if (options.isExclaim) rate *= 1.02;
       else if (options.isQuote) rate *= 0.98;
 
-      // 1) Optional Studio Pro TTS (OpenAI / ElevenLabs)
+      // 1) Optional Studio Pro TTS (Google Gemini 3.8 Flash TTS / OpenAI / ElevenLabs)
       if (state.selectedVoiceURI === 'studio_pro' && state.ttsApiKey) {
         try {
           state.isBuffering = true;
           updatePlayUI();
-          let resp;
-          if (state.ttsProvider === 'openai') {
-            resp = await fetch('https://api.openai.com/v1/audio/speech', {
+          let blob = null;
+          if (state.ttsProvider === 'gemini') {
+            const geminiVoices = ['Puck', 'Kore', 'Zephyr', 'Fenrir', 'Aoede'];
+            const gVoice = geminiVoices.includes(state.ttsPremiumVoice) ? state.ttsPremiumVoice : 'Puck';
+            const resp = await fetch('https://generativelanguage.googleapis.com/v1beta/interactions', {
+              method: 'POST',
+              headers: { 'x-goog-api-key': state.ttsApiKey, 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                model: 'gemini-3.8-flash-tts',
+                input: [{
+                  type: 'user_input',
+                  content: [{
+                    type: 'text',
+                    text,
+                    annotations: [{
+                      type: 'speech_metadata',
+                      style: moodCfg.aiStyle || 'clear, upbeat, lively Vietnamese narrator'
+                    }]
+                  }]
+                }],
+                response_format: { type: 'audio' },
+                generation_config: { speech_config: [{ voice: gVoice }] }
+              })
+            });
+            if (!resp.ok) throw new Error('Gemini TTS API error ' + resp.status);
+            const data = await resp.json();
+            let b64Audio = '';
+            const steps = Array.isArray(data.steps) ? data.steps : (Array.isArray(data.outputs) ? data.outputs : []);
+            for (const st of steps) {
+              const parts = Array.isArray(st.content) ? st.content : [st];
+              for (const part of parts) {
+                if (part && part.type === 'audio' && part.data) b64Audio = part.data;
+              }
+            }
+            if (!b64Audio && data.output_audio && data.output_audio.data) b64Audio = data.output_audio.data;
+            if (!b64Audio) throw new Error('No audio returned');
+            const binStr = atob(b64Audio);
+            const bytes = new Uint8Array(binStr.length);
+            for (let i = 0; i < binStr.length; i++) bytes[i] = binStr.charCodeAt(i);
+            blob = new Blob([bytes], { type: 'audio/wav' });
+          } else if (state.ttsProvider === 'openai') {
+            const openaiVoices = ['coral', 'ash', 'nova', 'onyx', 'alloy', 'shimmer'];
+            const oVoice = openaiVoices.includes(state.ttsPremiumVoice) ? state.ttsPremiumVoice : 'coral';
+            const resp = await fetch('https://api.openai.com/v1/audio/speech', {
               method: 'POST',
               headers: { 'Authorization': 'Bearer ' + state.ttsApiKey, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ model: 'tts-1', voice: state.ttsPremiumVoice || 'nova', input: text, speed: Math.min(2.0, Math.max(0.5, rate)) })
+              body: JSON.stringify({ model: 'tts-1', voice: oVoice, input: text, speed: Math.min(2.0, Math.max(0.5, rate)) })
             });
+            if (!resp.ok) throw new Error('OpenAI API error');
+            blob = await resp.blob();
           } else {
-            resp = await fetch('https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM', {
+            const resp = await fetch('https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM', {
               method: 'POST',
               headers: { 'xi-api-key': state.ttsApiKey, 'Content-Type': 'application/json' },
               body: JSON.stringify({ text, model_id: 'eleven_multilingual_v2' })
             });
+            if (!resp.ok) throw new Error('ElevenLabs API error');
+            blob = await resp.blob();
           }
-          if (!resp.ok) throw new Error('API error');
-          const blob = await resp.blob();
           if (myToken !== state.playbackToken || !state.isPlaying) return;
           const url = URL.createObjectURL(blob);
           el.ttsAudio.src = url;
-          el.ttsAudio.playbackRate = 1.0;
+          el.ttsAudio.playbackRate = state.ttsProvider === 'gemini' ? Math.min(1.8, Math.max(0.85, state.rateMultiplier)) : 1.0;
           el.ttsAudio.onplaying = () => { state.isBuffering = false; updatePlayUI(); duckBgmForSpeech(true); };
           el.ttsAudio.onended = () => { URL.revokeObjectURL(url); duckBgmForSpeech(false); onDone(); };
           el.ttsAudio.onerror = () => { URL.revokeObjectURL(url); pausePlayback(); showToast('Lỗi phát âm thanh từ API.'); };
@@ -2821,7 +2879,7 @@
           return;
         } catch (err) {
           if (myToken !== state.playbackToken) return;
-          showToast('API Key không hợp lệ — chuyển sang giọng miễn phí.');
+          showToast('API Key không hợp lệ hoặc hết hạn mức — chuyển sang giọng miễn phí.');
           state.selectedVoiceURI = 'online_vi';
           el.voiceSelect.value = 'online_vi';
         }
@@ -3316,12 +3374,18 @@
 
       el.progressSlider.addEventListener('input', (e) => jumpToSentence(parseInt(e.target.value, 10), state.isPlaying));
       el.moodSelect.addEventListener('change', (e) => { state.mood = e.target.value; saveState(); if (state.isPlaying) playCurrentSentence(); });
-      // 1-Tap Sleep Mode vs Driving Mode Presets
+      // 1-Tap Work/Review vs Driving vs Sleep Mode Presets
       const updatePresetButtonsUI = () => {
+        const bWork = document.getElementById('btnPresetWork');
         const bSleep = document.getElementById('btnPresetSleep');
         const bDrive = document.getElementById('btnPresetDrive');
+        const isWork = state.mood === 'work' || state.mood === 'review';
         const isSleep = state.mood === 'sleep';
         const isDrive = state.mood === 'drive';
+        if (bWork) {
+          bWork.classList.toggle('bg-sky-500', isWork);
+          bWork.classList.toggle('text-slate-950', isWork);
+        }
         if (bSleep) {
           bSleep.classList.toggle('bg-amber-500', isSleep);
           bSleep.classList.toggle('text-slate-950', isSleep);
@@ -3333,7 +3397,20 @@
       };
 
       const applyListeningPreset = (preset) => {
-        if (preset === 'sleep') {
+        if (preset === 'work') {
+          state.mood = 'review';
+          el.moodSelect.value = 'review';
+          applySpeed(1.25);
+          state.ambientMode = 'off';
+          stopBgmMusicImmediate();
+          el.ambientLabel.textContent = 'Nhạc nền';
+          document.getElementById('btnAmbient').classList.remove('border-amber-500', 'text-amber-500');
+          clearTimer();
+          if (state.isPlaying) playCurrentSentence(false);
+          saveState();
+          updatePresetButtonsUI();
+          showToast('⚡ Chế độ Làm việc / Review Video: Giọng sắc nét nhanh gọn, tắt nhạc ru ngủ để tỉnh táo 100%!');
+        } else if (preset === 'sleep') {
           state.mood = 'sleep';
           el.moodSelect.value = 'sleep';
           applySpeed(1.0);
@@ -3345,7 +3422,7 @@
           document.getElementById('btnAmbient').classList.add('border-amber-500', 'text-amber-500');
           if (state.timerMode === 'off') setTimer(30);
           if (state.theme === 'light') { state.theme = 'dark'; applyTheme(); }
-          if (state.isPlaying) { startBgmMusic('deep_night'); playCurrentSentence(); }
+          if (state.isPlaying) { startBgmMusic('deep_night'); playCurrentSentence(false); }
           saveState();
           updatePresetButtonsUI();
           showToast('🌙 Chế độ Ngủ: Giọng êm trầm 1.0x • Nhạc Đêm Sâu Lắng • Hẹn giờ 30p');
@@ -3360,15 +3437,17 @@
           el.ambientLabel.textContent = 'Lái xe tỉnh táo';
           document.getElementById('btnAmbient').classList.add('border-amber-500', 'text-amber-500');
           clearTimer();
-          if (state.isPlaying) { startBgmMusic('driving_beat'); playCurrentSentence(); }
+          if (state.isPlaying) { startBgmMusic('driving_beat'); playCurrentSentence(false); }
           saveState();
           updatePresetButtonsUI();
           showToast('🚗 Chế độ Lái xe: Giọng sáng tỉnh táo 1.2x • Nhịp Lo-Fi chống buồn ngủ');
         }
       };
 
+      const btnPresetWork = document.getElementById('btnPresetWork');
       const btnPresetSleep = document.getElementById('btnPresetSleep');
       const btnPresetDrive = document.getElementById('btnPresetDrive');
+      if (btnPresetWork) btnPresetWork.addEventListener('click', () => applyListeningPreset('work'));
       if (btnPresetSleep) btnPresetSleep.addEventListener('click', () => applyListeningPreset('sleep'));
       if (btnPresetDrive) btnPresetDrive.addEventListener('click', () => applyListeningPreset('drive'));
       el.moodSelect.addEventListener('change', updatePresetButtonsUI);
