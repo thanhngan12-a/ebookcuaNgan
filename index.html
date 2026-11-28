@@ -2139,6 +2139,19 @@
 
       el.voiceSelect.innerHTML = '';
 
+      if (Object.keys(preRecordedManifest).length > 0) {
+        const grpMp3 = document.createElement('optgroup');
+        grpMp3.label = '🎧 Giọng Studio MP3 Thu Sẵn (0 cần API • Chuẩn Spotify)';
+        const mp3Opt = document.createElement('option');
+        mp3Opt.value = 'prerecorded_mp3';
+        const curMeta = preRecordedManifest[state.bookId];
+        mp3Opt.textContent = curMeta
+          ? `★ ${curMeta.voice || 'Hoài My Neural (MP3 Thu sẵn)'}`
+          : '★ Hoài My Neural (MP3 Thu sẵn — có ở sách đã thu)';
+        grpMp3.appendChild(mp3Opt);
+        el.voiceSelect.appendChild(grpMp3);
+      }
+
       if (state.ttsProvider !== 'free' && state.ttsApiKey) {
         const grpPro = document.createElement('optgroup');
         grpPro.label = 'Giọng Studio Truyền Cảm';
@@ -2191,10 +2204,17 @@
         el.voiceSelect.appendChild(grp2);
       }
 
-      if (state.ttsProvider !== 'free' && state.ttsApiKey) {
+      const hasCurrentMp3 = !!getPreRecordedChapterUrl(state.bookId, state.chapterId);
+      if (state.selectedVoiceURI === 'prerecorded_mp3') {
+        // Keep user's MP3 studio selection
+      } else if (hasCurrentMp3 && (!state.selectedVoiceURI || state.selectedVoiceURI === 'online_vi')) {
+        state.selectedVoiceURI = 'prerecorded_mp3';
+      } else if (state.ttsProvider !== 'free' && state.ttsApiKey) {
         state.selectedVoiceURI = 'studio_pro';
       } else if (state.selectedVoiceURI && (state.selectedVoiceURI === 'online_vi' || all.some(v => v.voiceURI === state.selectedVoiceURI))) {
         // Keep user's explicit voice choice untouched
+      } else if (hasCurrentMp3) {
+        state.selectedVoiceURI = 'prerecorded_mp3';
       } else if (viVoices.length > 0) {
         state.selectedVoiceURI = viVoices[0].voiceURI;
       } else {
@@ -2746,6 +2766,9 @@
       clearInterval(ttsWatchdogInterval);
       clearInterval(state.resumeHeartbeat);
       activeSynthUtter = null;
+      if (!seamless) {
+        activeMp3ChapterKey = '';
+      }
       try {
         el.ttsAudio.onended = null;
         el.ttsAudio.onerror = null;
@@ -3050,6 +3073,161 @@
       if (playPromise !== undefined) {
         playPromise.catch(handleFail);
       }
+    }
+
+    // --- Native Pre-Recorded Studio MP3 Engine (Zero API Key, Instant Play, Full-Chapter Spotify Background Audio!) ---
+    let preRecordedManifest = {};
+    let activeMp3ChapterKey = '';
+
+    async function loadPreRecordedManifest() {
+      try {
+        const resp = await fetch('./audio/manifest.json?t=' + Date.now(), { cache: 'no-store' });
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data && typeof data === 'object') preRecordedManifest = data;
+        }
+      } catch (e) {}
+    }
+
+    function getPreRecordedChapterUrl(bookId, chapterId) {
+      const meta = preRecordedManifest && preRecordedManifest[bookId];
+      if (!meta || !Array.isArray(meta.chapters)) return '';
+      if (!meta.chapters.includes(chapterId)) return '';
+      return `./audio/${bookId}/ch_${chapterId}.${meta.format || 'mp3'}`;
+    }
+
+    function buildChapterTimeline() {
+      let totalChars = 0;
+      const lens = state.sentences.map(s => {
+        const l = Math.max(8, (s.speechText || s.text || '').length);
+        totalChars += l;
+        return l;
+      });
+      let acc = 0;
+      return lens.map((l, idx) => {
+        const startRatio = acc / Math.max(1, totalChars);
+        acc += l;
+        return { idx, startRatio, endRatio: acc / Math.max(1, totalChars) };
+      });
+    }
+
+    function seekActivePreRecordedMp3(targetSentenceIdx) {
+      const chKey = `${state.bookId}|${state.chapterId}`;
+      if (activeMp3ChapterKey !== chKey || !el.ttsAudio || !el.ttsAudio.duration || !isFinite(el.ttsAudio.duration)) return false;
+      const timeline = buildChapterTimeline();
+      const entry = timeline[Math.max(0, Math.min(timeline.length - 1, targetSentenceIdx))];
+      if (!entry) return false;
+      try {
+        el.ttsAudio.currentTime = Math.max(0, Math.min(el.ttsAudio.duration - 0.5, entry.startRatio * el.ttsAudio.duration));
+        if (el.ttsAudio.paused && state.isPlaying) {
+          const p = el.ttsAudio.play();
+          if (p && typeof p.catch === 'function') p.catch(() => {});
+        }
+        return true;
+      } catch (e) { return false; }
+    }
+
+    function playPreRecordedChapterMp3(myToken) {
+      const url = getPreRecordedChapterUrl(state.bookId, state.chapterId);
+      if (!url) return false;
+
+      const chKey = `${state.bookId}|${state.chapterId}`;
+      const timeline = buildChapterTimeline();
+      const startEntry = timeline[Math.max(0, Math.min(timeline.length - 1, state.sentenceIdx))] || { startRatio: 0 };
+      const moodCfg = MOODS[state.mood] || MOODS.better_version;
+      const mp3Rate = Math.min(1.8, Math.max(0.75, moodCfg.baseRate * state.rateMultiplier));
+
+      state.isBuffering = true;
+      updatePlayUI();
+      activeMp3ChapterKey = chKey;
+
+      let finished = false;
+      let soughtInitial = state.sentenceIdx === 0;
+      let maxReachedTime = 0;
+      let lastSyncedIdx = state.sentenceIdx;
+
+      const finishChapterMp3 = () => {
+        if (finished || myToken !== state.playbackToken) return;
+        finished = true;
+        activeMp3ChapterKey = '';
+        el.ttsAudio.ontimeupdate = null;
+        el.ttsAudio.onended = null;
+        duckBgmForSpeech(false);
+        if (!state.isPlaying) return;
+        state.completedChapters[state.chapterId] = true;
+        renderChapterList(el.chapterSearch.value);
+        if (state.timerMode === 'chapter') {
+          pausePlayback();
+          clearTimer();
+          showToast('Đã nghe hết chương — Hẹn giờ tự động dừng.');
+          return;
+        }
+        if (state.chapterId + 1 < state.chapters.length) {
+          selectChapter(state.chapterId + 1, 0, true, false);
+        } else {
+          pausePlayback();
+          showToast('Bạn đã nghe xong toàn bộ cuốn sách!');
+        }
+      };
+
+      el.ttsAudio.loop = true;
+      applyConsistentAudioRate(el.ttsAudio, mp3Rate);
+      el.ttsAudio.onloadedmetadata = () => {
+        if (myToken !== state.playbackToken) return;
+        applyConsistentAudioRate(el.ttsAudio, mp3Rate);
+        if (!soughtInitial && el.ttsAudio.duration && isFinite(el.ttsAudio.duration)) {
+          soughtInitial = true;
+          try {
+            el.ttsAudio.currentTime = Math.max(0, Math.min(el.ttsAudio.duration - 0.5, startEntry.startRatio * el.ttsAudio.duration));
+          } catch (e) {}
+        }
+      };
+      el.ttsAudio.onplaying = () => {
+        if (myToken !== state.playbackToken) return;
+        applyConsistentAudioRate(el.ttsAudio, mp3Rate);
+        state.isBuffering = false;
+        updatePlayUI();
+        initMediaSessionHandlers();
+        duckBgmForSpeech(true);
+      };
+      el.ttsAudio.ontimeupdate = () => {
+        if (finished || myToken !== state.playbackToken || !state.isPlaying) return;
+        const cur = el.ttsAudio.currentTime || 0;
+        const dur = el.ttsAudio.duration || 0;
+        if (cur > maxReachedTime) maxReachedTime = cur;
+        if (dur > 1 && isFinite(dur)) {
+          const ratio = Math.min(1, Math.max(0, cur / dur));
+          const activeEntry = timeline.find(t => ratio >= t.startRatio && ratio <= t.endRatio);
+          if (activeEntry && activeEntry.idx !== lastSyncedIdx) {
+            lastSyncedIdx = activeEntry.idx;
+            state.sentenceIdx = activeEntry.idx;
+            highlightActiveSentence(!document.hidden);
+            updateProgressUI();
+          }
+          if (cur >= dur - 0.22 || (maxReachedTime > dur - 1.2 && cur < maxReachedTime - 0.6)) {
+            finishChapterMp3();
+          }
+        }
+      };
+      el.ttsAudio.onended = finishChapterMp3;
+      el.ttsAudio.onerror = () => {
+        if (finished || myToken !== state.playbackToken) return;
+        finished = true;
+        activeMp3ChapterKey = '';
+        el.ttsAudio.ontimeupdate = null;
+        showToast('Không tải được MP3 chương này — tự chuyển sang giọng đọc trực tiếp.');
+        state.selectedVoiceURI = 'online_vi';
+        el.voiceSelect.value = 'online_vi';
+        playCurrentSentence(false);
+      };
+
+      el.ttsAudio.src = url;
+      applyConsistentAudioRate(el.ttsAudio, mp3Rate);
+      const p = el.ttsAudio.play();
+      if (p && typeof p.catch === 'function') {
+        p.catch(() => {});
+      }
+      return true;
     }
 
     // --- Gemini Multi-Key, 4-Model, 3800-Char Batch Engine + Lookahead Prefetch + Permanent IndexedDB Audio Cache ---
@@ -3627,6 +3805,11 @@
       recordReadingHistory();
       saveState();
 
+      // 0) Native Studio Pre-Recorded MP3 (Zero API Key, Instant Play, Full-Chapter Spotify Background Audio!)
+      if (state.selectedVoiceURI === 'prerecorded_mp3' && getPreRecordedChapterUrl(state.bookId, state.chapterId)) {
+        if (playPreRecordedChapterMp3(myToken)) return;
+      }
+
       // Use Smart Batching (~3-4 min per 1 request + 3-model rotation) when Gemini Studio TTS is active!
       if (state.selectedVoiceURI === 'studio_pro' && state.ttsProvider === 'gemini' && state.ttsApiKey) {
         const handled = await playGeminiBatchFrom(state.sentenceIdx, myToken, seamless);
@@ -3687,8 +3870,9 @@
       setBackgroundKeepAlive(true);
       updatePlayUI();
       if (state.ambientMode !== 'off') startBgmMusic(state.ambientMode);
+      const isNativeMp3 = state.selectedVoiceURI === 'prerecorded_mp3' && !!getPreRecordedChapterUrl(state.bookId, state.chapterId);
       const isGeminiBatch = state.selectedVoiceURI === 'studio_pro' && state.ttsProvider === 'gemini' && state.ttsApiKey;
-      if (!isGeminiBatch && (forceIntro || (state.playIntroEnabled && state.sentenceIdx === 0))) {
+      if (!isNativeMp3 && !isGeminiBatch && (forceIntro || (state.playIntroEnabled && state.sentenceIdx === 0))) {
         playChapterWelcomeThenStart(false);
       } else {
         playCurrentSentence();
@@ -3720,6 +3904,9 @@
         state.isPlaying = true;
         updatePlayUI();
         if (state.ambientMode !== 'off') startBgmMusic(state.ambientMode);
+        if (state.selectedVoiceURI === 'prerecorded_mp3' && seekActivePreRecordedMp3(state.sentenceIdx)) {
+          return;
+        }
         playCurrentSentence();
       }
     }
@@ -4735,6 +4922,7 @@
         document.getElementById('btnAmbient').classList.add('border-amber-500', 'text-amber-500');
       }
 
+      await loadPreRecordedManifest();
       populateVoices();
       setTimeout(populateVoices, 400);
       setTimeout(populateVoices, 1500);
