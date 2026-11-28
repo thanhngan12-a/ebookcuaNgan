@@ -2983,6 +2983,283 @@
       }
     }
 
+    // --- Gemini Multi-Model Batch Engine (1 API call = ~3-4 min continuous studio audio + 3-model free quota rotation + cache!) ---
+    const geminiModelCooldowns = {};
+    const geminiAudioCache = new Map();
+
+    function base64ToUint8Array(b64) {
+      const binStr = atob(b64);
+      const bytes = new Uint8Array(binStr.length);
+      for (let i = 0; i < binStr.length; i++) bytes[i] = binStr.charCodeAt(i);
+      return bytes;
+    }
+
+    function wrapPcm16ToWavBlob(pcmBytes, sampleRate = 24000) {
+      const numChannels = 1;
+      const bitsPerSample = 16;
+      const byteRate = sampleRate * numChannels * (bitsPerSample / 8);
+      const blockAlign = numChannels * (bitsPerSample / 8);
+      const dataSize = pcmBytes.byteLength;
+      const header = new ArrayBuffer(44);
+      const view = new DataView(header);
+      const wStr = (off, s) => { for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i)); };
+      wStr(0, 'RIFF');
+      view.setUint32(4, 36 + dataSize, true);
+      wStr(8, 'WAVE');
+      wStr(12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, numChannels, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, byteRate, true);
+      view.setUint16(32, blockAlign, true);
+      view.setUint16(34, bitsPerSample, true);
+      wStr(36, 'data');
+      view.setUint32(40, dataSize, true);
+      return new Blob([header, pcmBytes], { type: 'audio/wav' });
+    }
+
+    async function synthesizeGeminiBatch(batchText, stylePrompt, voiceName, apiKey) {
+      const geminiVoices = ['Puck', 'Kore', 'Zephyr', 'Fenrir', 'Aoede'];
+      const gVoice = geminiVoices.includes(voiceName) ? voiceName : 'Kore';
+      const now = Date.now();
+      const models = [
+        { id: 'gemini-3.8-flash-lite-tts', api: 'interactions' },
+        { id: 'gemini-3.8-flash-tts', api: 'interactions' },
+        { id: 'gemini-3.1-flash-tts-preview', api: 'generateContent' }
+      ];
+
+      let lastErrMsg = '';
+      let allRateLimited = true;
+      for (const m of models) {
+        if (geminiModelCooldowns[m.id] && geminiModelCooldowns[m.id] > now) continue;
+        try {
+          let resp;
+          if (m.api === 'interactions') {
+            resp = await fetch('https://generativelanguage.googleapis.com/v1beta/interactions', {
+              method: 'POST',
+              headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                model: m.id,
+                input: [{
+                  type: 'user_input',
+                  content: [{
+                    type: 'text',
+                    text: batchText,
+                    annotations: [{ type: 'speech_metadata', style: stylePrompt }]
+                  }]
+                }],
+                response_format: { type: 'audio' },
+                generation_config: { speech_config: [{ voice: gVoice }] }
+              })
+            });
+          } else {
+            resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m.id}:generateContent`, {
+              method: 'POST',
+              headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: batchText }] }],
+                generationConfig: {
+                  responseModalities: ['AUDIO'],
+                  speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: gVoice } } }
+                }
+              })
+            });
+          }
+
+          if (resp.status === 429) {
+            geminiModelCooldowns[m.id] = Date.now() + 25 * 60 * 1000;
+            lastErrMsg = `${m.id} hết lượt Free Tier (429)`;
+            continue;
+          }
+          if (resp.status === 401 || resp.status === 403) {
+            allRateLimited = false;
+            throw new Error('API Key không hợp lệ hoặc chưa bật quyền (HTTP ' + resp.status + ')');
+          }
+          if (!resp.ok) {
+            allRateLimited = false;
+            lastErrMsg = `${m.id} lỗi HTTP ${resp.status}`;
+            continue;
+          }
+
+          const data = await resp.json();
+          let b64Audio = '';
+          let mimeType = 'audio/wav';
+          if (m.api === 'interactions') {
+            const steps = Array.isArray(data.steps) ? data.steps : (Array.isArray(data.outputs) ? data.outputs : []);
+            for (const st of steps) {
+              const parts = Array.isArray(st.content) ? st.content : [st];
+              for (const part of parts) {
+                if (part && part.type === 'audio' && part.data) {
+                  b64Audio = part.data;
+                  if (part.mime_type) mimeType = part.mime_type;
+                }
+              }
+            }
+            if (!b64Audio && data.output_audio && data.output_audio.data) b64Audio = data.output_audio.data;
+          } else {
+            const cands = data.candidates || [];
+            for (const c of cands) {
+              const parts = (c.content && c.content.parts) || [];
+              for (const p of parts) {
+                if (p.inlineData && p.inlineData.data) {
+                  b64Audio = p.inlineData.data;
+                  if (p.inlineData.mimeType) mimeType = p.inlineData.mimeType;
+                }
+              }
+            }
+          }
+          if (!b64Audio) {
+            allRateLimited = false;
+            lastErrMsg = `${m.id} không trả audio`;
+            continue;
+          }
+          const rawBytes = base64ToUint8Array(b64Audio);
+          const isWav = rawBytes.length >= 4 && rawBytes[0] === 82 && rawBytes[1] === 73 && rawBytes[2] === 70 && rawBytes[3] === 70; // "RIFF"
+          const blob = isWav ? new Blob([rawBytes], { type: 'audio/wav' }) : wrapPcm16ToWavBlob(rawBytes, 24000);
+          return { blob, modelUsed: m.id };
+        } catch (err) {
+          if (String(err.message || '').includes('API Key không hợp lệ')) throw err;
+          allRateLimited = false;
+          lastErrMsg = err.message || 'Lỗi kết nối Gemini';
+        }
+      }
+      if (allRateLimited) {
+        throw new Error('Cả 3 model Gemini TTS đều đã hết hạn mức Free Tier hôm nay (tự reset sau vài giờ).');
+      }
+      throw new Error(lastErrMsg || 'Không thể kết nối Gemini TTS.');
+    }
+
+    async function playGeminiBatchFrom(startIdx, myToken, seamless) {
+      const moodCfg = MOODS[state.mood] || MOODS.better_version;
+      // Group ~2,200 chars (~15-25 sentences = ~3-4 minutes of continuous narration!) into ONE API request
+      const items = [];
+      let totalChars = 0;
+      let endIdx = startIdx;
+      for (let i = startIdx; i < state.sentences.length; i++) {
+        const sObj = state.sentences[i];
+        const spoken = sObj.speechText || sanitizeTextForSpeech(sObj.text);
+        if (!spoken) { endIdx = i; continue; }
+        if (items.length > 0 && totalChars + spoken.length > 2200) break;
+        items.push({ idx: i, text: spoken, len: spoken.length, isParaEnd: sObj.isParaEnd });
+        totalChars += spoken.length;
+        endIdx = i;
+      }
+      if (items.length === 0) return false;
+
+      // Build paragraph-aware narrative script for natural Better Version / Tri Kỷ Cảm Xúc flow
+      const batchText = items.map((it, k) => it.text + (it.isParaEnd && k < items.length - 1 ? '\n\n' : ' ')).join('').trim();
+      const cacheKey = `${state.bookId}|${state.chapterId}|${startIdx}|${endIdx}|${state.ttsPremiumVoice}|${state.mood}`;
+
+      state.isBuffering = true;
+      updatePlayUI();
+
+      try {
+        let blob = geminiAudioCache.get(cacheKey);
+        if (!blob) {
+          const res = await synthesizeGeminiBatch(batchText, moodCfg.aiStyle || 'warm expressive Vietnamese narrator', state.ttsPremiumVoice, state.ttsApiKey);
+          blob = res.blob;
+          if (geminiAudioCache.size >= 12) {
+            const firstKey = geminiAudioCache.keys().next().value;
+            geminiAudioCache.delete(firstKey);
+          }
+          geminiAudioCache.set(cacheKey, blob);
+        }
+        if (myToken !== state.playbackToken || !state.isPlaying) return true;
+
+        // Precompute cumulative character ratio for smooth sentence highlight tracking during playback
+        let acc = 0;
+        const timeline = items.map(it => {
+          const startRatio = acc / Math.max(1, totalChars);
+          acc += it.len;
+          return { idx: it.idx, startRatio, endRatio: acc / Math.max(1, totalChars) };
+        });
+
+        const url = URL.createObjectURL(blob);
+        const proRate = Math.min(1.45, Math.max(0.82, state.rateMultiplier));
+        let batchFinished = false;
+        let batchMaxTime = 0;
+        let lastSyncedIdx = startIdx;
+
+        const finishBatch = () => {
+          if (batchFinished || myToken !== state.playbackToken) return;
+          batchFinished = true;
+          el.ttsAudio.ontimeupdate = null;
+          el.ttsAudio.onended = null;
+          URL.revokeObjectURL(url);
+          duckBgmForSpeech(false);
+          if (!state.isPlaying) return;
+          if (endIdx + 1 < state.sentences.length) {
+            state.sentenceIdx = endIdx + 1;
+            playCurrentSentence(true);
+          } else {
+            state.completedChapters[state.chapterId] = true;
+            renderChapterList(el.chapterSearch.value);
+            if (state.timerMode === 'chapter') {
+              pausePlayback();
+              clearTimer();
+              showToast('Đã đọc hết chương — Hẹn giờ tự động dừng.');
+              return;
+            }
+            if (state.chapterId + 1 < state.chapters.length) {
+              selectChapter(state.chapterId + 1, 0, true, false);
+            } else {
+              pausePlayback();
+              showToast('Bạn đã nghe xong toàn bộ cuốn sách!');
+            }
+          }
+        };
+
+        el.ttsAudio.loop = true;
+        applyConsistentAudioRate(el.ttsAudio, proRate);
+        el.ttsAudio.src = url;
+        applyConsistentAudioRate(el.ttsAudio, proRate);
+        el.ttsAudio.onloadedmetadata = () => applyConsistentAudioRate(el.ttsAudio, proRate);
+        el.ttsAudio.onplaying = () => {
+          if (myToken !== state.playbackToken) return;
+          applyConsistentAudioRate(el.ttsAudio, proRate);
+          state.isBuffering = false;
+          updatePlayUI();
+          initMediaSessionHandlers();
+          duckBgmForSpeech(true);
+        };
+        el.ttsAudio.ontimeupdate = () => {
+          if (batchFinished || myToken !== state.playbackToken || !state.isPlaying) return;
+          const cur = el.ttsAudio.currentTime || 0;
+          const dur = el.ttsAudio.duration || 0;
+          if (cur > batchMaxTime) batchMaxTime = cur;
+          if (dur > 0.4 && isFinite(dur)) {
+            const ratio = Math.min(1, Math.max(0, cur / dur));
+            const activeEntry = timeline.find(t => ratio >= t.startRatio && ratio <= t.endRatio);
+            if (activeEntry && activeEntry.idx !== lastSyncedIdx) {
+              lastSyncedIdx = activeEntry.idx;
+              state.sentenceIdx = activeEntry.idx;
+              highlightActiveSentence(!document.hidden);
+              updateProgressUI();
+            }
+            if (cur >= dur - 0.16 || (batchMaxTime > dur - 0.8 && cur < batchMaxTime - 0.4)) {
+              finishBatch();
+            }
+          }
+        };
+        el.ttsAudio.onended = finishBatch;
+        el.ttsAudio.onerror = () => {
+          el.ttsAudio.ontimeupdate = null;
+          URL.revokeObjectURL(url);
+          pausePlayback();
+          showToast('Lỗi phát âm thanh từ Gemini.');
+        };
+        await el.ttsAudio.play();
+        return true;
+      } catch (err) {
+        if (myToken !== state.playbackToken) return true;
+        showToast((err.message || 'Lỗi Gemini TTS') + ' — tạm chuyển sang giọng miễn phí.');
+        state.selectedVoiceURI = 'online_vi';
+        el.voiceSelect.value = 'online_vi';
+        return false;
+      }
+    }
+
     async function speakSingleText(text, options, myToken, onDone) {
       const cleanSpoken = sanitizeTextForSpeech(text);
       if (!cleanSpoken) { onDone(); return; }
@@ -3150,7 +3427,7 @@
       runNextIntroChunk();
     }
 
-    function playCurrentSentence(seamless = false) {
+    async function playCurrentSentence(seamless = false) {
       stopSpeechInternal(seamless);
       const myToken = state.playbackToken;
       const s = state.sentences[state.sentenceIdx];
@@ -3160,6 +3437,12 @@
       updateProgressUI();
       recordReadingHistory();
       saveState();
+
+      // Use Smart Batching (~3-4 min per 1 request + 3-model rotation) when Gemini Studio TTS is active!
+      if (state.selectedVoiceURI === 'studio_pro' && state.ttsProvider === 'gemini' && state.ttsApiKey) {
+        const handled = await playGeminiBatchFrom(state.sentenceIdx, myToken, seamless);
+        if (handled || myToken !== state.playbackToken || !state.isPlaying) return;
+      }
 
       const moodCfg = MOODS[state.mood] || MOODS.better_version;
       const nextS = state.sentences[state.sentenceIdx + 1];
@@ -3215,7 +3498,8 @@
       setBackgroundKeepAlive(true);
       updatePlayUI();
       if (state.ambientMode !== 'off') startBgmMusic(state.ambientMode);
-      if (forceIntro || (state.playIntroEnabled && state.sentenceIdx === 0)) {
+      const isGeminiBatch = state.selectedVoiceURI === 'studio_pro' && state.ttsProvider === 'gemini' && state.ttsApiKey;
+      if (!isGeminiBatch && (forceIntro || (state.playIntroEnabled && state.sentenceIdx === 0))) {
         playChapterWelcomeThenStart(false);
       } else {
         playCurrentSentence();
