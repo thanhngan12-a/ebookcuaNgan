@@ -638,17 +638,20 @@
             <span class="wave-bar"></span>
             <span class="wave-bar"></span>
           </div>
-          <div class="inline-flex items-center rounded-lg elevated border p-0.5 shrink-0" role="group" aria-label="Chế độ nhanh Làm việc, Lái xe hoặc Ngủ">
-            <button id="btnPresetWork" type="button" class="px-2 py-1 rounded-md text-[11px] font-semibold transition hover:text-sky-400" title="Chế độ Làm việc / Video Review: Giọng nhanh sáng sắc nét 1.3x, tắt nhạc ru ngủ để tỉnh táo 100%">⚡ Làm việc</button>
-            <button id="btnPresetDrive" type="button" class="px-2 py-1 rounded-md text-[11px] font-semibold transition hover:text-emerald-400" title="Chế độ Lái xe: Giọng sáng tỉnh táo 1.2x + Nhạc nhịp Lo-Fi chống buồn ngủ">🚗 Lái xe</button>
-            <button id="btnPresetSleep" type="button" class="px-2 py-1 rounded-md text-[11px] font-semibold transition hover:text-amber-500" title="Chế độ Ngủ: Giọng êm trầm + Nhạc Đêm Sâu Lắng + Hẹn giờ 30p">🌙 Ngủ</button>
+          <div class="inline-flex items-center rounded-lg elevated border p-0.5 shrink-0 max-w-full overflow-x-auto custom-scroll" role="group" aria-label="Chế độ kể chuyện nhanh">
+            <button id="btnPresetBetter" type="button" class="shrink-0 px-2 py-1 rounded-md text-[11px] font-semibold transition hover:text-teal-400" title="Phong cách Better Version: Giọng điềm đạm chiêm nghiệm, tròn chữ + Piano chữa lành nhẹ">🌱 Better</button>
+            <button id="btnPresetTriKy" type="button" class="shrink-0 px-2 py-1 rounded-md text-[11px] font-semibold transition hover:text-orange-400" title="Phong cách Tri Kỷ Cảm Xúc: Giọng tâm sự trầm ấm như bạn tri kỷ + Acoustic êm dịu">☕ Tri Kỷ</button>
+            <button id="btnPresetWork" type="button" class="shrink-0 px-2 py-1 rounded-md text-[11px] font-semibold transition hover:text-sky-400" title="Chế độ Làm việc / Video Review: Giọng sắc nét tỉnh táo, không nhạc ru ngủ">⚡ Làm việc</button>
+            <button id="btnPresetDrive" type="button" class="shrink-0 px-2 py-1 rounded-md text-[11px] font-semibold transition hover:text-emerald-400" title="Chế độ Lái xe: Giọng sáng tỉnh táo + Nhịp Lo-Fi chống buồn ngủ">🚗 Lái xe</button>
+            <button id="btnPresetSleep" type="button" class="shrink-0 px-2 py-1 rounded-md text-[11px] font-semibold transition hover:text-amber-500" title="Chế độ Ngủ: Giọng êm chậm + Đêm Sâu Lắng + Hẹn giờ 30p">🌙 Ngủ</button>
           </div>
-          <select id="moodSelect" class="text-xs px-2 py-1.5 rounded-lg elevated border focus:outline-none focus:border-amber-500 cursor-pointer" title="Phong cách đọc">
-            <option value="review">🎬 Review Video (Nhanh, cuốn như YouTube)</option>
+          <select id="moodSelect" class="text-xs px-2 py-1.5 rounded-lg elevated border focus:outline-none focus:border-amber-500 cursor-pointer" title="Phong cách kể chuyện & cảm xúc">
+            <option value="better_version">🌱 Better Version (Chiêm nghiệm, chữa lành)</option>
+            <option value="tri_ky">☕ Tri Kỷ Cảm Xúc (Tâm sự trầm ấm)</option>
             <option value="work">⚡ Làm việc (Tỉnh táo, sắc nét)</option>
+            <option value="review">🎬 Review Video (Nhanh, cuốn như YouTube)</option>
             <option value="drive">🚗 Lái xe (Khỏe khoắn, rõ ràng)</option>
-            <option value="expressive">🎙️ Podcast (Tự nhiên, rõ chữ)</option>
-            <option value="sleep">🌙 Dễ ngủ (Êm ái, trầm ấm)</option>
+            <option value="sleep">🌙 Dễ ngủ (Chậm, ru ngủ)</option>
           </select>
           <select id="voiceSelect" class="text-xs px-2 py-1.5 rounded-lg elevated border focus:outline-none focus:border-amber-500 max-w-[135px] sm:max-w-[195px] truncate cursor-pointer" title="Chọn giọng đọc"></select>
         </div>
@@ -804,6 +807,14 @@
         <button type="button" data-ambient="off" class="ambient-opt w-full text-left px-3.5 py-2.5 rounded-xl elevated border text-xs font-medium hover:border-amber-500 transition flex items-center justify-between">
           <span>Tắt nhạc nền</span>
           <span class="text-[11px]" style="color: var(--text-secondary)">Chỉ giọng đọc</span>
+        </button>
+        <button type="button" data-ambient="better_heal" class="ambient-opt w-full text-left px-3.5 py-2.5 rounded-xl elevated border text-xs font-medium hover:border-amber-500 transition flex items-center justify-between">
+          <span>🌱 Sóng Biển &amp; Piano Chữa Lành (Better Version)</span>
+          <span class="text-[11px] text-teal-400 font-semibold">Chiêm nghiệm</span>
+        </button>
+        <button type="button" data-ambient="tri_ky_acoustic" class="ambient-opt w-full text-left px-3.5 py-2.5 rounded-xl elevated border text-xs font-medium hover:border-amber-500 transition flex items-center justify-between">
+          <span>☕ Acoustic Tri Kỷ (Guitar &amp; Piano Radio)</span>
+          <span class="text-[11px] text-orange-400 font-semibold">Tâm sự ấm áp</span>
         </button>
         <button type="button" data-ambient="deep_night" class="ambient-opt w-full text-left px-3.5 py-2.5 rounded-xl elevated border text-xs font-medium hover:border-amber-500 transition flex items-center justify-between">
           <span>🌌 Đêm Sâu Lắng (Piano Trầm &amp; Pad Ấm)</span>
@@ -1008,11 +1019,12 @@
     const STORAGE_KEY = 'audiobook_ngan_v4';
     // Tuned for smooth, flowing, non-dragging bedtime storytelling
     const MOODS = {
-      review:     { baseRate: 1.24, basePitch: 1.09, sentencePause: 0,   paraPause: 50,  aiStyle: 'energetic, lively Vietnamese YouTube video narrator, crisp, engaging, fast-paced, never monotone' },
-      work:       { baseRate: 1.15, basePitch: 1.06, sentencePause: 0,   paraPause: 60,  aiStyle: 'clear, upbeat, alert Vietnamese audiobook narrator for working and staying focused, crisp articulation' },
-      drive:      { baseRate: 1.16, basePitch: 1.08, sentencePause: 0,   paraPause: 60,  aiStyle: 'confident, bright, energetic Vietnamese narrator to keep a driver wide awake and engaged' },
-      expressive: { baseRate: 1.08, basePitch: 1.02, sentencePause: 25,  paraPause: 110, aiStyle: 'natural, expressive Vietnamese podcast host, conversational and warm' },
-      sleep:      { baseRate: 0.96, basePitch: 0.92, sentencePause: 30,  paraPause: 130, aiStyle: 'soft, gentle, calm slow bedtime storyteller' }
+      better_version: { baseRate: 0.96, basePitch: 0.97, sentencePause: 95,  paraPause: 280, aiStyle: 'Vietnamese podcast style like Better Version: warm female/calm narrator, crystal clear pronunciation, thoughtful reflective pauses, gentle healing storytelling tone, never flat news-reading' },
+      tri_ky:         { baseRate: 0.98, basePitch: 0.93, sentencePause: 110, paraPause: 310, aiStyle: 'Vietnamese radio podcast style like Tri Ky Cam Xuc (Web5ngay): intimate, heartfelt, warm soulful voice chatting like a close friend over tea, rich emotional rise and fall, deeply expressive storytelling' },
+      work:           { baseRate: 1.05, basePitch: 1.04, sentencePause: 25,  paraPause: 95,  aiStyle: 'Clear, bright, alert Vietnamese audiobook narrator for working and staying focused, crisp articulation and engaging rhythm' },
+      review:         { baseRate: 1.12, basePitch: 1.07, sentencePause: 0,   paraPause: 70,  aiStyle: 'Energetic, lively Vietnamese YouTube book-review narrator, crisp, dynamic emphasis on key ideas, never monotone' },
+      drive:          { baseRate: 1.06, basePitch: 1.06, sentencePause: 20,  paraPause: 85,  aiStyle: 'Confident, upbeat, clear Vietnamese narrator to keep a driver wide awake and absorbed in the story' },
+      sleep:          { baseRate: 0.91, basePitch: 0.90, sentencePause: 130, paraPause: 340, aiStyle: 'Soft, gentle, calm slow bedtime storyteller, warm and peaceful' }
     };
 
     const state = {
@@ -1029,8 +1041,8 @@
       isPlayingIntro: false,
       playIntroEnabled: true,
       playbackToken: 0,
-      rateMultiplier: 1.2,
-      mood: 'work',
+      rateMultiplier: 1.0,
+      mood: 'better_version',
       selectedVoiceURI: '',
       ttsProvider: 'free',
       ttsPremiumVoice: 'Puck',
@@ -1893,31 +1905,78 @@
       updateProgressUI();
       if (state.isPlaying && !state.isPlayingIntro) {
         if (el.ttsAudio && !el.ttsAudio.paused) {
-          const moodCfg = MOODS[state.mood] || MOODS.sleep;
-          el.ttsAudio.playbackRate = Math.min(2.2, Math.max(0.65, moodCfg.baseRate * state.rateMultiplier));
+          const moodCfg = MOODS[state.mood] || MOODS.better_version;
+          applyConsistentAudioRate(el.ttsAudio, moodCfg.baseRate * state.rateMultiplier);
         } else {
           playCurrentSentence();
         }
       }
     }
 
-    // --- Smart Flowing Chunk Merger (No Choppy / Dragging Breaks!) ---
+    // --- Speech Text Cleaner (Removes junk symbols, footnotes, expands abbreviations for natural Vietnamese storytelling) ---
+    function sanitizeTextForSpeech(raw) {
+      if (!raw) return '';
+      let s = String(raw);
+      // Remove URLs
+      s = s.replace(/https?:\/\/\S+/gi, '');
+      // Remove pure numeric / asterisk footnote references like [1], [12], (1), (*)
+      s = s.replace(/\[\s*\d+\s*\]/g, ' ');
+      s = s.replace(/\(\s*\*+\s*\)/g, ' ');
+      // Unwrap inline editorial brackets like [khách sạn của tôi] -> khách sạn của tôi
+      s = s.replace(/\[([^\]]{1,80})\]/g, ' $1 ');
+      // Expand common Vietnamese abbreviations so TTS doesn't spell letters awkwardly
+      s = s.replace(/\bv\.v\.?/gi, 'vân vân');
+      s = s.replace(/\bvd\s*[:.]/gi, 'ví dụ, ');
+      s = s.replace(/\btp\.\s*/gi, 'thành phố ');
+      s = s.replace(/\bpgs\.\s*/gi, 'phó giáo sư ');
+      s = s.replace(/\bths\.\s*/gi, 'thạc sĩ ');
+      s = s.replace(/\bgs\.\s*/gi, 'giáo sư ');
+      s = s.replace(/\bts\.\s*/gi, 'tiến sĩ ');
+      s = s.replace(/\bnxb\.?\s+/gi, 'nhà xuất bản ');
+      s = s.replace(/\btr\.\s*(\d+)/gi, 'trang $1');
+      s = s.replace(/\bvs\.?(?=\s)/gi, 'so với');
+      s = s.replace(/\betc\.?/gi, 'vân vân');
+      // Natural symbol pronunciation
+      s = s.replace(/(\d)\s*%/g, '$1 phần trăm');
+      s = s.replace(/\s+&\s+/g, ' và ');
+      // Convert A/B word pairs (not dates/fractions like 7/12) into "A hoặc B" instead of reading "gạch chéo"
+      s = s.replace(/([A-Za-zÀ-ỹ]{2,})\s*\/\s*([A-Za-zÀ-ỹ]{2,})/g, '$1 hoặc $2');
+      // Convert ellipses (... or …) to a soft comma pause so TTS NEVER reads "ba chấm" / "chấm chấm chấm"
+      s = s.replace(/\.{2,}|…+/g, ', ');
+      // Convert em-dash / en-dash / double-dash to natural breathing comma pause
+      s = s.replace(/\s*[—–]+\s*/g, ', ');
+      s = s.replace(/\s+--+\s+/g, ', ');
+      s = s.replace(/^\s*[-•▪◆►★→]+\s*/g, '');
+      // Strip decorative symbols & stray markdown/punctuation artifacts that break speech flow
+      s = s.replace(/[\*_~`#^|\\<>•▪◆►★→←↑↓§¶†‡]+/g, ' ');
+      s = s.replace(/[“”„"«»‘’]/g, '');
+      // Normalize repeated punctuation & whitespace
+      s = s.replace(/([,;:])\s*([,;:])+/g, '$1 ');
+      s = s.replace(/\s+([.,?!;:])/g, '$1');
+      s = s.replace(/\s+/g, ' ').trim();
+      return s;
+    }
+
+    // --- Emotion-Aware Chunk Splitter (Never mashes questions/ellipses together & prevents Google TTS fast rushing on long blocks) ---
     function splitTextIntoChunks(text) {
       const clean = text.replace(/\s+/g, ' ').trim();
       if (!clean) return [];
-      const rawSentences = clean.match(/[^.!?…]+[.!?…]+(?:["”'»)]*)|[^.!?…]+$/g) || [clean];
+      const rawSentences = clean.match(/[^.!?…]+(?:[.!?…]+(?:["”'»)]*)?|$)/g) || [clean];
       const merged = [];
       let buf = '';
+      const isEmotionalBoundary = (str) => /[?!…]|\.{3}/.test(str);
+
       const flushBuf = () => {
         if (!buf.trim()) return;
         const p = buf.trim();
-        if (p.length <= 180) {
+        // Cap around 130 chars so online TTS keeps steady, expressive pacing instead of speeding up on 180-char walls
+        if (p.length <= 135) {
           merged.push(p);
         } else {
-          const sub = p.split(/(?<=[,;:])\s+/);
+          const sub = p.split(/(?<=[,;:—–])\s+/);
           let sbuf = '';
           sub.forEach(partSub => {
-            if ((sbuf + ' ' + partSub).trim().length > 170 && sbuf) {
+            if ((sbuf + ' ' + partSub).trim().length > 125 && sbuf) {
               merged.push(sbuf.trim());
               sbuf = partSub;
             } else {
@@ -1925,12 +1984,12 @@
             }
           });
           if (sbuf.trim()) {
-            if (sbuf.trim().length <= 180) merged.push(sbuf.trim());
+            if (sbuf.trim().length <= 135) merged.push(sbuf.trim());
             else {
               const words = sbuf.trim().split(/\s+/);
               let wbuf = '';
               words.forEach(w => {
-                if ((wbuf + ' ' + w).trim().length > 165 && wbuf) {
+                if ((wbuf + ' ' + w).trim().length > 120 && wbuf) {
                   merged.push(wbuf.trim());
                   wbuf = w;
                 } else wbuf = wbuf ? wbuf + ' ' + w : w;
@@ -1942,11 +2001,11 @@
         buf = '';
       };
 
-      // Merge short consecutive sentences together so speech flows seamlessly
       rawSentences.forEach(s => {
         const t = s.trim();
         if (!t) return;
-        if (buf && (buf.length + t.length + 1) <= 170) {
+        // Only merge very short neutral fragments; NEVER merge across emotional sentences (?, !, ...)
+        if (buf && buf.length < 48 && !isEmotionalBoundary(buf) && !isEmotionalBoundary(t) && (buf.length + t.length + 1) <= 115) {
           buf += ' ' + t;
         } else {
           flushBuf();
@@ -1965,19 +2024,26 @@
         const page = typeof paraObj === 'string' ? (chapter.startPage || 1) : (paraObj.p || chapter.startPage || 1);
         const chunks = splitTextIntoChunks(text);
         chunks.forEach((txt, idx) => {
+          const spoken = sanitizeTextForSpeech(txt);
+          if (!spoken) return;
+          const isParaEnd = idx === chunks.length - 1;
           result.push({
             text: txt,
+            speechText: spoken,
             page,
             paraIdx: pIdx,
-            isParaEnd: idx === chunks.length - 1,
-            isQuestion: /\?["”']?$/.test(txt),
-            isExclaim: /!["”']?$/.test(txt),
-            isQuote: /^[“"—–-]/.test(txt)
+            isParaEnd,
+            isQuestion: /\?["”'»)]*$/.test(txt),
+            isExclaim: /!["”'»)]*$/.test(txt),
+            isQuote: /^[“"«—–-]/.test(txt) || /[“"«].+[”"»]/.test(txt),
+            hasEllipsis: /\.{2,}|…/.test(txt),
+            isDramaticShort: spoken.length <= 58 && isParaEnd
           });
         });
       });
       if (result.length === 0) {
-        result.push({ text: chapter.title, page: chapter.startPage || 1, paraIdx: 0, isParaEnd: true, isQuestion: false, isExclaim: false, isQuote: false });
+        const fallbackTitle = chapter.title || 'Chương mới';
+        result.push({ text: fallbackTitle, speechText: sanitizeTextForSpeech(fallbackTitle), page: chapter.startPage || 1, paraIdx: 0, isParaEnd: true, isQuestion: false, isExclaim: false, isQuote: false, hasEllipsis: false, isDramaticShort: false });
       }
       return result;
     }
@@ -2190,7 +2256,7 @@
       el.progressSlider.value = cur;
 
       const remainingWords = state.sentences.slice(cur).reduce((acc, s) => acc + s.text.split(/\s+/).length, 0);
-      const rate = MOODS[state.mood].baseRate * state.rateMultiplier;
+      const rate = (MOODS[state.mood] || MOODS.better_version).baseRate * state.rateMultiplier;
       const remMin = Math.max(1, Math.round(remainingWords / (180 * rate)));
       el.timeRemainingEst.textContent = `~${remMin} phút còn lại`;
       updateProgressStatsUI();
@@ -2319,12 +2385,59 @@
         // Smooth fade-in
         bgmMasterGain.gain.cancelScheduledValues(bgmCtx.currentTime);
         if (bgmFilterNode) {
-          bgmFilterNode.frequency.setTargetAtTime(mode === 'driving_beat' ? 1900 : 680, bgmCtx.currentTime, 0.25);
+          const cutoff = mode === 'driving_beat' ? 1900 : (mode === 'tri_ky_acoustic' || mode === 'better_heal' ? 1050 : 680);
+          bgmFilterNode.frequency.setTargetAtTime(cutoff, bgmCtx.currentTime, 0.25);
         }
         bgmMasterGain.gain.setTargetAtTime(getTargetBgmGain(state.isPlaying), bgmCtx.currentTime, 0.6);
 
         let step = 0;
-        if (mode === 'deep_night') {
+        if (mode === 'better_heal') {
+          // Better Version style: gentle ocean wave pink-noise swell + warm reflective healing piano
+          const bufLen = bgmCtx.sampleRate * 4;
+          const buf = bgmCtx.createBuffer(1, bufLen, bgmCtx.sampleRate);
+          const d = buf.getChannelData(0);
+          let last = 0;
+          for (let i = 0; i < bufLen; i++) {
+            const waveEnv = 0.55 + 0.45 * Math.sin((i / bufLen) * Math.PI * 2);
+            last = (last + 0.035 * (Math.random() * 2 - 1)) / 1.035;
+            d[i] = last * 0.14 * waveEnv;
+          }
+          const src = bgmCtx.createBufferSource();
+          src.buffer = buf;
+          src.loop = true;
+          src.connect(bgmFilterNode);
+          src.start();
+          bgmNoiseSource = src;
+
+          const chords = [[174.61, 220.0, 261.63, 329.63], [130.81, 196.0, 246.94, 329.63], [146.83, 220.0, 261.63, 349.23], [196.0, 246.94, 293.66, 392.0]];
+          const notes = [523.25, 0, 440.0, 392.0, 0, 329.63, 392.0, 0, 349.23, 0, 329.63, 293.66, 0, 261.63, 0, 0];
+          const tick = () => {
+            if (step % 4 === 0) chords[Math.floor(step / 4) % chords.length].forEach(f => playWarmNote(f, 5.8, 0.10, 'sine', 1.4));
+            const n = notes[step % notes.length];
+            if (n) playWarmNote(n, 3.2, 0.08, 'triangle', 0.05);
+            step++;
+          };
+          tick();
+          bgmTimer = setInterval(tick, 1450);
+        } else if (mode === 'tri_ky_acoustic') {
+          // Tri Ky Cam Xuc style: intimate acoustic guitar fingerpicking arpeggio + warm tea-time radio pad
+          const arps = [
+            [146.83, 220.0, 293.66, 369.99, 293.66, 220.0], // Dmaj
+            [123.47, 185.0, 246.94, 293.66, 246.94, 185.0], // Bm
+            [98.00,  146.83, 196.0, 246.94, 196.0,  146.83], // Gmaj
+            [110.00, 164.81, 220.0, 277.18, 220.0,  164.81]  // Amaj
+          ];
+          const tick = () => {
+            const bar = Math.floor(step / 6) % arps.length;
+            const pos = step % 6;
+            const freq = arps[bar][pos];
+            playWarmNote(freq, 2.2, pos === 0 ? 0.13 : 0.09, 'triangle', 0.02);
+            if (pos === 0) playWarmNote(arps[bar][0] * 0.5, 4.5, 0.12, 'sine', 0.8);
+            step++;
+          };
+          tick();
+          bgmTimer = setInterval(tick, 720);
+        } else if (mode === 'deep_night') {
           const chords = [[130.81, 196.0, 293.66], [110.0, 164.81, 246.94], [87.31, 130.81, 196.0], [98.0, 146.83, 220.0]];
           const melody = [329.63, 0, 293.66, 0, 261.63, 0, 246.94, 0, 220.0, 0, 196.0, 0, 293.66, 0, 261.63, 0];
           const tick = () => {
@@ -2577,6 +2690,63 @@
       if (!seamless && 'speechSynthesis' in window) window.speechSynthesis.cancel();
     }
 
+    // --- Expressive Storytelling Prosody Engine (Better Version / Tri Kỷ Cảm Xúc cadence + Zero Sudden Speed Jumps) ---
+    function computeSentenceProsody(options = {}) {
+      const moodCfg = MOODS[state.mood] || MOODS.better_version;
+      let rate = moodCfg.baseRate * state.rateMultiplier;
+      let pitch = moodCfg.basePitch;
+      let extraPauseMs = 0;
+      const cueNotes = [];
+
+      // Subtle, organic storytelling inflection (strictly bounded so playback NEVER rushes abruptly!)
+      if (options.hasEllipsis) {
+        rate *= 0.94;
+        pitch -= 0.04;
+        extraPauseMs += 170;
+        cueNotes.push('slow down softly with a reflective, lingering trailing tone');
+      }
+      if (options.isQuestion) {
+        rate *= 1.01;
+        pitch += 0.05;
+        extraPauseMs += 140;
+        cueNotes.push('gentle curious upward questioning intonation inviting the listener to reflect');
+      } else if (options.isExclaim) {
+        rate *= 1.03;
+        pitch += 0.04;
+        extraPauseMs += 80;
+        cueNotes.push('warm expressive emphasis and lively conviction');
+      }
+      if (options.isQuote) {
+        rate *= 0.96;
+        pitch -= 0.03;
+        extraPauseMs += 90;
+        cueNotes.push('intimate quoted dialogue or memorable quote delivery');
+      }
+      if (options.isDramaticShort) {
+        rate *= 0.94;
+        extraPauseMs += 150;
+        cueNotes.push('deliberate, meaningful slow delivery so this key takeaway sinks in');
+      }
+
+      // Clamp cleanly so speed is ALWAYS consistent and comfortable (never chipmunk-fast!)
+      rate = Math.round(Math.min(1.65, Math.max(0.72, rate)) * 100) / 100;
+      pitch = Math.round(Math.min(1.25, Math.max(0.78, pitch)) * 100) / 100;
+
+      const baseStyle = moodCfg.aiStyle || 'warm expressive Vietnamese storyteller';
+      const stylePrompt = cueNotes.length > 0 ? `${baseStyle}. For this line: ${cueNotes.join('; ')}.` : baseStyle;
+      return { rate, pitch, extraPauseMs, stylePrompt, moodCfg };
+    }
+
+    function applyConsistentAudioRate(audioEl, rate) {
+      const safeRate = Math.min(1.65, Math.max(0.72, rate || 1.0));
+      try {
+        audioEl.defaultPlaybackRate = safeRate;
+        audioEl.playbackRate = safeRate;
+        if ('preservesPitch' in audioEl) audioEl.preservesPitch = true;
+        if ('webkitPreservesPitch' in audioEl) audioEl.webkitPreservesPitch = true;
+      } catch (e) {}
+    }
+
     function speakViaBrowserSynth(text, options, myToken, onDone) {
       if (!('speechSynthesis' in window)) {
         pausePlayback();
@@ -2586,14 +2756,11 @@
       const freshVoices = window.speechSynthesis.getVoices() || [];
       if (freshVoices.length > 0) state.voices = freshVoices;
 
-      const moodCfg = MOODS[state.mood] || MOODS.sleep;
-      let rate = moodCfg.baseRate * state.rateMultiplier;
-      let pitch = moodCfg.basePitch;
-      if (options.isQuestion) pitch += 0.04;
-      else if (options.isExclaim) pitch += 0.03;
-      else if (options.isQuote) pitch -= 0.03;
+      const spokenText = sanitizeTextForSpeech(text);
+      if (!spokenText) { onDone(); return; }
 
-      const utter = new SpeechSynthesisUtterance(text);
+      const prosody = computeSentenceProsody(options);
+      const utter = new SpeechSynthesisUtterance(spokenText);
       activeSynthUtter = utter;
 
       let voice = state.voices.find(v => v.voiceURI === state.selectedVoiceURI);
@@ -2610,8 +2777,8 @@
         utter.lang = 'vi-VN';
       }
 
-      utter.rate = Math.min(2.2, Math.max(0.55, rate));
-      utter.pitch = Math.min(1.4, Math.max(0.7, pitch));
+      utter.rate = prosody.rate;
+      utter.pitch = prosody.pitch;
 
       let finished = false;
       let started = false;
@@ -2733,9 +2900,14 @@
       // Keep loop=true so WebKit NEVER fires native 'ended' and NEVER closes the background AVAudioSession.
       // Intercept right before the end (or on wrap-around to 0) via timeupdate to seamlessly load the next sentence!
       el.ttsAudio.loop = true;
+      el.ttsAudio.onloadedmetadata = () => {
+        if (myToken !== state.playbackToken) return;
+        applyConsistentAudioRate(el.ttsAudio, rate);
+      };
       el.ttsAudio.onplaying = () => {
         if (myToken !== state.playbackToken) return;
         clearTimeout(ttsLoadTimeout);
+        applyConsistentAudioRate(el.ttsAudio, rate);
         lastProgressAt = Date.now();
         state.isBuffering = false;
         updatePlayUI();
@@ -2760,8 +2932,9 @@
       el.ttsAudio.onended = finishAudio;
       el.ttsAudio.onerror = handleFail;
 
+      applyConsistentAudioRate(el.ttsAudio, rate);
       el.ttsAudio.src = url;
-      el.ttsAudio.playbackRate = Math.min(2.2, Math.max(0.65, rate));
+      applyConsistentAudioRate(el.ttsAudio, rate);
 
       clearTimeout(ttsLoadTimeout);
       ttsLoadTimeout = setTimeout(() => {
@@ -2811,10 +2984,10 @@
     }
 
     async function speakSingleText(text, options, myToken, onDone) {
-      const moodCfg = MOODS[state.mood] || MOODS.sleep;
-      let rate = moodCfg.baseRate * state.rateMultiplier;
-      if (options.isExclaim) rate *= 1.02;
-      else if (options.isQuote) rate *= 0.98;
+      const cleanSpoken = sanitizeTextForSpeech(text);
+      if (!cleanSpoken) { onDone(); return; }
+      const prosody = computeSentenceProsody(options);
+      const rate = prosody.rate;
 
       // 1) Optional Studio Pro TTS (Google Gemini 3.8 Flash TTS / OpenAI / ElevenLabs)
       if (state.selectedVoiceURI === 'studio_pro' && state.ttsApiKey) {
@@ -2824,7 +2997,7 @@
           let blob = null;
           if (state.ttsProvider === 'gemini') {
             const geminiVoices = ['Puck', 'Kore', 'Zephyr', 'Fenrir', 'Aoede'];
-            const gVoice = geminiVoices.includes(state.ttsPremiumVoice) ? state.ttsPremiumVoice : 'Puck';
+            const gVoice = geminiVoices.includes(state.ttsPremiumVoice) ? state.ttsPremiumVoice : 'Kore';
             const resp = await fetch('https://generativelanguage.googleapis.com/v1beta/interactions', {
               method: 'POST',
               headers: { 'x-goog-api-key': state.ttsApiKey, 'Content-Type': 'application/json' },
@@ -2834,10 +3007,10 @@
                   type: 'user_input',
                   content: [{
                     type: 'text',
-                    text,
+                    text: cleanSpoken,
                     annotations: [{
                       type: 'speech_metadata',
-                      style: moodCfg.aiStyle || 'clear, upbeat, lively Vietnamese narrator'
+                      style: prosody.stylePrompt
                     }]
                   }]
                 }],
@@ -2867,7 +3040,7 @@
             const resp = await fetch('https://api.openai.com/v1/audio/speech', {
               method: 'POST',
               headers: { 'Authorization': 'Bearer ' + state.ttsApiKey, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ model: 'tts-1', voice: oVoice, input: text, speed: Math.min(2.0, Math.max(0.5, rate)) })
+              body: JSON.stringify({ model: 'tts-1', voice: oVoice, input: cleanSpoken, speed: Math.min(1.65, Math.max(0.72, rate)) })
             });
             if (!resp.ok) throw new Error('OpenAI API error');
             blob = await resp.blob();
@@ -2875,13 +3048,14 @@
             const resp = await fetch('https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM', {
               method: 'POST',
               headers: { 'xi-api-key': state.ttsApiKey, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ text, model_id: 'eleven_multilingual_v2' })
+              body: JSON.stringify({ text: cleanSpoken, model_id: 'eleven_multilingual_v2' })
             });
             if (!resp.ok) throw new Error('ElevenLabs API error');
             blob = await resp.blob();
           }
           if (myToken !== state.playbackToken || !state.isPlaying) return;
           const url = URL.createObjectURL(blob);
+          const proRate = state.ttsProvider === 'gemini' ? Math.min(1.5, Math.max(0.85, state.rateMultiplier)) : 1.0;
           let proFinished = false;
           let proMaxTime = 0;
           const finishPro = () => {
@@ -2894,9 +3068,11 @@
             onDone();
           };
           el.ttsAudio.loop = true;
+          applyConsistentAudioRate(el.ttsAudio, proRate);
           el.ttsAudio.src = url;
-          el.ttsAudio.playbackRate = state.ttsProvider === 'gemini' ? Math.min(1.8, Math.max(0.85, state.rateMultiplier)) : 1.0;
-          el.ttsAudio.onplaying = () => { state.isBuffering = false; updatePlayUI(); initMediaSessionHandlers(); duckBgmForSpeech(true); };
+          applyConsistentAudioRate(el.ttsAudio, proRate);
+          el.ttsAudio.onloadedmetadata = () => applyConsistentAudioRate(el.ttsAudio, proRate);
+          el.ttsAudio.onplaying = () => { applyConsistentAudioRate(el.ttsAudio, proRate); state.isBuffering = false; updatePlayUI(); initMediaSessionHandlers(); duckBgmForSpeech(true); };
           el.ttsAudio.ontimeupdate = () => {
             if (proFinished || myToken !== state.playbackToken || !state.isPlaying) return;
             const cur = el.ttsAudio.currentTime || 0;
@@ -2918,14 +3094,14 @@
         }
       }
 
-      // 2) Online Vietnamese TTS (with no-referrer + dual endpoint + automatic local fallback)
+      // 2) Online Vietnamese TTS (with cleaned speech text + consistent playbackRate + iOS loop-trap)
       if ((state.selectedVoiceURI === 'online_vi' && navigator.onLine) || !('speechSynthesis' in window)) {
-        playOnlineTtsWithFallback(text, options, myToken, rate, onDone, false);
+        playOnlineTtsWithFallback(cleanSpoken, options, myToken, rate, onDone, false);
         return;
       }
 
-      // 3) Browser Neural Voice (Edge HoaiMy / NamMinh, Google Tiếng Việt, etc.)
-      speakViaBrowserSynth(text, options, myToken, onDone);
+      // 3) Browser Neural Voice (Edge HoaiMy / NamMinh, iOS Linh, Google Tiếng Việt, etc.)
+      speakViaBrowserSynth(cleanSpoken, options, myToken, onDone);
     }
 
     function playChapterWelcomeThenStart(onlyIntro = false) {
@@ -2985,16 +3161,20 @@
       recordReadingHistory();
       saveState();
 
-      const moodCfg = MOODS[state.mood] || MOODS.sleep;
+      const moodCfg = MOODS[state.mood] || MOODS.better_version;
       const nextS = state.sentences[state.sentenceIdx + 1];
-
-      speakSingleText(s.text, {
+      const sentenceOpts = {
         isQuestion: s.isQuestion,
         isExclaim: s.isExclaim,
         isQuote: s.isQuote,
+        hasEllipsis: s.hasEllipsis,
+        isDramaticShort: s.isDramaticShort,
         seamless,
-        nextText: nextS ? nextS.text : ''
-      }, myToken, () => {
+        nextText: nextS ? (nextS.speechText || nextS.text) : ''
+      };
+      const prosody = computeSentenceProsody(sentenceOpts);
+
+      speakSingleText(s.speechText || s.text, sentenceOpts, myToken, () => {
         if (myToken !== state.playbackToken || !state.isPlaying) return;
         const advanceNext = () => {
           if (myToken !== state.playbackToken || !state.isPlaying) return;
@@ -3019,9 +3199,9 @@
           }
         };
 
-        const rawDelay = s.isParaEnd ? moodCfg.paraPause : moodCfg.sentencePause;
-        const delayMs = Math.round(rawDelay / state.rateMultiplier);
-        // CRITICAL for iOS/Android background playback: chain synchronously inside onended when hidden or delay is tiny!
+        const rawDelay = (s.isParaEnd ? moodCfg.paraPause : moodCfg.sentencePause) + (prosody.extraPauseMs || 0);
+        const delayMs = Math.round(rawDelay / Math.max(0.8, state.rateMultiplier));
+        // CRITICAL for iOS/Android background playback: chain synchronously inside timeupdate/onended when hidden or delay is tiny!
         if (document.hidden || delayMs <= 35) {
           advanceNext();
         } else {
@@ -3407,33 +3587,60 @@
 
       el.progressSlider.addEventListener('input', (e) => jumpToSentence(parseInt(e.target.value, 10), state.isPlaying));
       el.moodSelect.addEventListener('change', (e) => { state.mood = e.target.value; saveState(); if (state.isPlaying) playCurrentSentence(); });
-      // 1-Tap Work/Review vs Driving vs Sleep Mode Presets
+      // 1-Tap Better Version / Tri Kỷ Cảm Xúc / Work / Driving / Sleep Mode Presets
       const updatePresetButtonsUI = () => {
+        const bBetter = document.getElementById('btnPresetBetter');
+        const bTriKy = document.getElementById('btnPresetTriKy');
         const bWork = document.getElementById('btnPresetWork');
         const bSleep = document.getElementById('btnPresetSleep');
         const bDrive = document.getElementById('btnPresetDrive');
+        const isBetter = state.mood === 'better_version';
+        const isTriKy = state.mood === 'tri_ky';
         const isWork = state.mood === 'work' || state.mood === 'review';
         const isSleep = state.mood === 'sleep';
         const isDrive = state.mood === 'drive';
-        if (bWork) {
-          bWork.classList.toggle('bg-sky-500', isWork);
-          bWork.classList.toggle('text-slate-950', isWork);
-        }
-        if (bSleep) {
-          bSleep.classList.toggle('bg-amber-500', isSleep);
-          bSleep.classList.toggle('text-slate-950', isSleep);
-        }
-        if (bDrive) {
-          bDrive.classList.toggle('bg-emerald-500', isDrive);
-          bDrive.classList.toggle('text-slate-950', isDrive);
-        }
+        if (bBetter) { bBetter.classList.toggle('bg-teal-500', isBetter); bBetter.classList.toggle('text-slate-950', isBetter); }
+        if (bTriKy) { bTriKy.classList.toggle('bg-orange-500', isTriKy); bTriKy.classList.toggle('text-slate-950', isTriKy); }
+        if (bWork) { bWork.classList.toggle('bg-sky-500', isWork); bWork.classList.toggle('text-slate-950', isWork); }
+        if (bSleep) { bSleep.classList.toggle('bg-amber-500', isSleep); bSleep.classList.toggle('text-slate-950', isSleep); }
+        if (bDrive) { bDrive.classList.toggle('bg-emerald-500', isDrive); bDrive.classList.toggle('text-slate-950', isDrive); }
       };
 
       const applyListeningPreset = (preset) => {
-        if (preset === 'work') {
-          state.mood = 'review';
-          el.moodSelect.value = 'review';
-          applySpeed(1.25);
+        if (preset === 'better_version') {
+          state.mood = 'better_version';
+          el.moodSelect.value = 'better_version';
+          applySpeed(1.0);
+          state.ambientMode = 'better_heal';
+          state.ambientVol = 0.14;
+          el.ambientVolSlider.value = 14;
+          el.ambientVolText.textContent = '14%';
+          el.ambientLabel.textContent = 'Better Version';
+          document.getElementById('btnAmbient').classList.add('border-amber-500', 'text-amber-500');
+          clearTimer();
+          if (state.isPlaying) { startBgmMusic('better_heal'); playCurrentSentence(false); }
+          saveState();
+          updatePresetButtonsUI();
+          showToast('🌱 Phong cách Better Version: Giọng điềm đạm chiêm nghiệm • Nhịp ngắt sâu lắng • Sóng & Piano chữa lành nhẹ');
+        } else if (preset === 'tri_ky') {
+          state.mood = 'tri_ky';
+          el.moodSelect.value = 'tri_ky';
+          applySpeed(1.0);
+          state.ambientMode = 'tri_ky_acoustic';
+          state.ambientVol = 0.15;
+          el.ambientVolSlider.value = 15;
+          el.ambientVolText.textContent = '15%';
+          el.ambientLabel.textContent = 'Tri Kỷ Acoustic';
+          document.getElementById('btnAmbient').classList.add('border-amber-500', 'text-amber-500');
+          clearTimer();
+          if (state.isPlaying) { startBgmMusic('tri_ky_acoustic'); playCurrentSentence(false); }
+          saveState();
+          updatePresetButtonsUI();
+          showToast('☕ Phong cách Tri Kỷ Cảm Xúc: Giọng tâm sự trầm ấm như bạn tri kỷ • Nhạc Acoustic Radio êm dịu');
+        } else if (preset === 'work') {
+          state.mood = 'work';
+          el.moodSelect.value = 'work';
+          applySpeed(1.1);
           state.ambientMode = 'off';
           stopBgmMusicImmediate();
           el.ambientLabel.textContent = 'Nhạc nền';
@@ -3442,15 +3649,15 @@
           if (state.isPlaying) playCurrentSentence(false);
           saveState();
           updatePresetButtonsUI();
-          showToast('⚡ Chế độ Làm việc / Review Video: Giọng sắc nét nhanh gọn, tắt nhạc ru ngủ để tỉnh táo 100%!');
+          showToast('⚡ Chế độ Làm việc: Giọng sắc nét tỉnh táo 1.1x, tắt nhạc nền để tập trung tối đa!');
         } else if (preset === 'sleep') {
           state.mood = 'sleep';
           el.moodSelect.value = 'sleep';
-          applySpeed(1.0);
+          applySpeed(0.95);
           state.ambientMode = 'deep_night';
-          state.ambientVol = 0.18;
-          el.ambientVolSlider.value = 18;
-          el.ambientVolText.textContent = '18%';
+          state.ambientVol = 0.16;
+          el.ambientVolSlider.value = 16;
+          el.ambientVolText.textContent = '16%';
           el.ambientLabel.textContent = 'Đêm sâu lắng';
           document.getElementById('btnAmbient').classList.add('border-amber-500', 'text-amber-500');
           if (state.timerMode === 'off') setTimer(30);
@@ -3458,28 +3665,32 @@
           if (state.isPlaying) { startBgmMusic('deep_night'); playCurrentSentence(false); }
           saveState();
           updatePresetButtonsUI();
-          showToast('🌙 Chế độ Ngủ: Giọng êm trầm 1.0x • Nhạc Đêm Sâu Lắng • Hẹn giờ 30p');
+          showToast('🌙 Chế độ Ngủ: Giọng êm chậm • Nhạc Đêm Sâu Lắng • Hẹn giờ 30p');
         } else if (preset === 'drive') {
           state.mood = 'drive';
           el.moodSelect.value = 'drive';
-          applySpeed(1.2);
+          applySpeed(1.1);
           state.ambientMode = 'driving_beat';
-          state.ambientVol = 0.16;
-          el.ambientVolSlider.value = 16;
-          el.ambientVolText.textContent = '16%';
+          state.ambientVol = 0.15;
+          el.ambientVolSlider.value = 15;
+          el.ambientVolText.textContent = '15%';
           el.ambientLabel.textContent = 'Lái xe tỉnh táo';
           document.getElementById('btnAmbient').classList.add('border-amber-500', 'text-amber-500');
           clearTimer();
           if (state.isPlaying) { startBgmMusic('driving_beat'); playCurrentSentence(false); }
           saveState();
           updatePresetButtonsUI();
-          showToast('🚗 Chế độ Lái xe: Giọng sáng tỉnh táo 1.2x • Nhịp Lo-Fi chống buồn ngủ');
+          showToast('🚗 Chế độ Lái xe: Giọng sáng tỉnh táo • Nhịp Lo-Fi chống buồn ngủ');
         }
       };
 
+      const btnPresetBetter = document.getElementById('btnPresetBetter');
+      const btnPresetTriKy = document.getElementById('btnPresetTriKy');
       const btnPresetWork = document.getElementById('btnPresetWork');
       const btnPresetSleep = document.getElementById('btnPresetSleep');
       const btnPresetDrive = document.getElementById('btnPresetDrive');
+      if (btnPresetBetter) btnPresetBetter.addEventListener('click', () => applyListeningPreset('better_version'));
+      if (btnPresetTriKy) btnPresetTriKy.addEventListener('click', () => applyListeningPreset('tri_ky'));
       if (btnPresetWork) btnPresetWork.addEventListener('click', () => applyListeningPreset('work'));
       if (btnPresetSleep) btnPresetSleep.addEventListener('click', () => applyListeningPreset('sleep'));
       if (btnPresetDrive) btnPresetDrive.addEventListener('click', () => applyListeningPreset('drive'));
@@ -3784,7 +3995,7 @@
       document.querySelectorAll('.timer-opt').forEach(btn => btn.addEventListener('click', () => setTimer(btn.dataset.timer)));
 
       // Soulful Blended Music Modal
-      const bgmNames = { off: 'Nhạc nền', deep_night: 'Đêm sâu lắng', cello_pad: 'Giấc ngủ sâu', rain_piano: 'Mưa & Piano', alpha_zen: 'Tĩnh tâm 432Hz', driving_beat: 'Lái xe tỉnh táo' };
+      const bgmNames = { off: 'Nhạc nền', better_heal: 'Better Version', tri_ky_acoustic: 'Tri Kỷ Acoustic', deep_night: 'Đêm sâu lắng', cello_pad: 'Giấc ngủ sâu', rain_piano: 'Mưa & Piano', alpha_zen: 'Tĩnh tâm 432Hz', driving_beat: 'Lái xe tỉnh táo' };
       document.getElementById('btnAmbient').addEventListener('click', () => { el.ambientModal.classList.remove('hidden'); el.ambientModal.classList.add('flex'); });
       document.getElementById('btnCloseAmbient').addEventListener('click', () => { el.ambientModal.classList.add('hidden'); el.ambientModal.classList.remove('flex'); });
       document.querySelectorAll('.ambient-opt').forEach(btn => {
@@ -3968,7 +4179,7 @@
       el.btnAutoScroll.classList.toggle('text-amber-500', state.autoScroll);
       el.btnAutoScroll.classList.toggle('border-amber-500/40', state.autoScroll);
 
-      const bgmNames = { off: 'Nhạc nền', deep_night: 'Đêm sâu lắng', cello_pad: 'Giấc ngủ sâu', rain_piano: 'Mưa & Piano', alpha_zen: 'Tĩnh tâm 432Hz', driving_beat: 'Lái xe tỉnh táo' };
+      const bgmNames = { off: 'Nhạc nền', better_heal: 'Better Version', tri_ky_acoustic: 'Tri Kỷ Acoustic', deep_night: 'Đêm sâu lắng', cello_pad: 'Giấc ngủ sâu', rain_piano: 'Mưa & Piano', alpha_zen: 'Tĩnh tâm 432Hz', driving_beat: 'Lái xe tỉnh táo' };
       el.ambientLabel.textContent = bgmNames[state.ambientMode] || 'Nhạc nền';
       if (state.ambientMode !== 'off') {
         document.getElementById('btnAmbient').classList.add('border-amber-500', 'text-amber-500');
