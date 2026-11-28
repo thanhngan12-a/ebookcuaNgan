@@ -912,10 +912,14 @@
             <option value="alloy">Alloy (OpenAI - Trung tính)</option>
           </select>
         </div>
-        <input id="ttsApiKeyInput" type="password" placeholder="Dán API Key (AIza... của Gemini, sk-... của OpenAI, hoặc ElevenLabs)" class="w-full px-3 py-2 text-xs rounded-lg elevated border focus:outline-none focus:border-amber-500" />
-        <div class="flex justify-end gap-2 pt-1">
-          <button id="btnClearApiKey" type="button" class="px-3 py-1.5 rounded-lg elevated border text-xs font-medium">Dùng miễn phí</button>
-          <button id="btnSaveVoiceSettings" type="button" class="px-4 py-1.5 rounded-lg bg-amber-500 text-slate-950 text-xs font-semibold hover:bg-amber-400">Lưu cài đặt</button>
+        <input id="ttsApiKeyInput" type="password" placeholder="Dán API Key (AQ.... hoặc AIza... của Gemini, sk-... của OpenAI)" class="w-full px-3 py-2 text-xs rounded-lg elevated border focus:outline-none focus:border-amber-500" />
+        <div id="voiceTestStatus" class="hidden text-[11px] px-2.5 py-1.5 rounded-lg elevated border"></div>
+        <div class="flex items-center justify-between gap-2 pt-1">
+          <button id="btnTestVoiceApi" type="button" class="px-2.5 py-1.5 rounded-lg elevated border border-sky-500/40 text-sky-400 text-xs font-semibold hover:bg-sky-500/10">🧪 Kiểm tra Key</button>
+          <div class="flex gap-2">
+            <button id="btnClearApiKey" type="button" class="px-3 py-1.5 rounded-lg elevated border text-xs font-medium">Dùng miễn phí</button>
+            <button id="btnSaveVoiceSettings" type="button" class="px-4 py-1.5 rounded-lg bg-amber-500 text-slate-950 text-xs font-semibold hover:bg-amber-400">Lưu cài đặt</button>
+          </div>
         </div>
       </div>
     </div>
@@ -3025,8 +3029,9 @@
       const now = Date.now();
       const models = [
         { id: 'gemini-3.8-flash-lite-tts', api: 'interactions' },
-        { id: 'gemini-3.8-flash-tts', api: 'interactions' },
-        { id: 'gemini-3.1-flash-tts-preview', api: 'generateContent' }
+        { id: 'gemini-3.1-flash-tts-preview', api: 'generateContent' },
+        { id: 'gemini-2.5-flash-preview-tts', api: 'generateContent' },
+        { id: 'gemini-3.8-flash-tts', api: 'interactions' }
       ];
 
       let lastErrMsg = '';
@@ -3054,11 +3059,14 @@
               })
             });
           } else {
+            const promptText = m.id.includes('2.5')
+              ? `Read the following Vietnamese audiobook passage aloud naturally and expressively without adding any commentary:\n\n${batchText}`
+              : batchText;
             resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m.id}:generateContent`, {
               method: 'POST',
               headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                contents: [{ parts: [{ text: batchText }] }],
+                contents: [{ parts: [{ text: promptText }] }],
                 generationConfig: {
                   responseModalities: ['AUDIO'],
                   speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: gVoice } } }
@@ -3068,8 +3076,12 @@
           }
 
           if (resp.status === 429) {
-            geminiModelCooldowns[m.id] = Date.now() + 25 * 60 * 1000;
-            lastErrMsg = `${m.id} hết lượt Free Tier (429)`;
+            let errBody = '';
+            try { errBody = await resp.text(); } catch (e) {}
+            const isDailyLimit = /per day|daily/i.test(errBody);
+            // If only RPM (3 requests/minute) limit, cool down 65 seconds; if daily limit, cool down 25 minutes
+            geminiModelCooldowns[m.id] = Date.now() + (isDailyLimit ? 25 * 60 * 1000 : 65 * 1000);
+            lastErrMsg = `${m.id} chạm giới hạn ${isDailyLimit ? 'ngày' : '3 lượt/phút'} (429)`;
             continue;
           }
           if (resp.status === 401 || resp.status === 403) {
@@ -4268,10 +4280,39 @@
         state.ttsProvider = document.getElementById('ttsProviderSelect').value;
         state.ttsPremiumVoice = document.getElementById('ttsPremiumVoiceSelect').value;
         state.ttsApiKey = document.getElementById('ttsApiKeyInput').value.trim();
+        Object.keys(geminiModelCooldowns).forEach(k => delete geminiModelCooldowns[k]);
+        geminiAudioCache.clear();
         populateVoices(); saveState();
         el.voiceModal.classList.add('hidden'); el.voiceModal.classList.remove('flex');
-        showToast('Đã lưu cài đặt giọng đọc!');
+        showToast('Đã lưu cài đặt giọng đọc (v16)!');
       });
+
+      const btnTestVoiceApi = document.getElementById('btnTestVoiceApi');
+      const voiceTestStatus = document.getElementById('voiceTestStatus');
+      if (btnTestVoiceApi && voiceTestStatus) {
+        btnTestVoiceApi.addEventListener('click', async () => {
+          const prov = document.getElementById('ttsProviderSelect').value;
+          const vName = document.getElementById('ttsPremiumVoiceSelect').value;
+          const key = document.getElementById('ttsApiKeyInput').value.trim();
+          voiceTestStatus.classList.remove('hidden');
+          if (prov !== 'gemini') {
+            voiceTestStatus.textContent = 'Nút kiểm tra nhanh hỗ trợ cho Google Gemini TTS (hãy chọn Google Gemini TTS ở trên).';
+            return;
+          }
+          if (!key) {
+            voiceTestStatus.textContent = '❌ Bạn chưa dán API Key.';
+            return;
+          }
+          voiceTestStatus.textContent = '⏳ Đang kiểm tra kết nối 4 model Gemini TTS...';
+          Object.keys(geminiModelCooldowns).forEach(k => delete geminiModelCooldowns[k]);
+          try {
+            const res = await synthesizeGeminiBatch('Xin chào, giọng đọc AI đã sẵn sàng phục vụ bạn.', 'warm expressive Vietnamese narrator', vName, key);
+            voiceTestStatus.textContent = `✅ Thành công! Đang chạy mượt với model ${res.modelUsed} (${Math.round(res.blob.size / 1024)} KB audio). Hãy bấm "Lưu cài đặt"!`;
+          } catch (err) {
+            voiceTestStatus.textContent = '❌ ' + (err.message || 'Lỗi kết nối');
+          }
+        });
+      }
 
       // Timer Modal
       el.btnTimer.addEventListener('click', () => { el.timerModal.classList.remove('hidden'); el.timerModal.classList.add('flex'); });

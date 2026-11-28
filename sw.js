@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ebook-ngan-offline-v15';
+const CACHE_NAME = 'ebook-ngan-offline-v16';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -27,6 +27,23 @@ self.addEventListener('fetch', (event) => {
 
   // Never cache live TTS or API calls
   if (req.url.includes('translate.googleapis.com') || req.url.includes('translate.google.com') || req.url.includes('generativelanguage.googleapis.com') || req.url.includes('api.openai.com') || req.url.includes('api.elevenlabs.io')) {
+    return;
+  }
+
+  // Network-First for HTML navigation so updates on GitHub Pages apply immediately on reload (offline falls back to cache)
+  const isHtml = req.mode === 'navigate' || (req.headers.get('accept') || '').includes('text/html') || req.url.endsWith('/index.html') || req.url.endsWith('/');
+  if (isHtml) {
+    event.respondWith(
+      fetch(req)
+        .then((networkResp) => {
+          if (networkResp && networkResp.status === 200) {
+            const copy = networkResp.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(req, copy)).catch(() => {});
+          }
+          return networkResp;
+        })
+        .catch(() => caches.match(req).then((c) => c || caches.match('./index.html')))
+    );
     return;
   }
 
