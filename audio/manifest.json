@@ -4,7 +4,11 @@
     "format": "mp3",
     "bitrate": "48kbps",
     "chapters": [
-      0
+      0,
+      1,
+      2,
+      3,
+      4
     ]
   }
 }
